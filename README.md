@@ -29,7 +29,7 @@ FmodManager.PlaySong(FmodSongs.MainLevel);        // instead of "event:/Music/Ma
 FmodManager.PlaySoundOneShot(FmodSFX.Coin);        // instead of "event:/SFX/Coin"
 ```
 
-Install by copying [`ExportHaxeConstants.js`](https://github.com/Tanz0rz/haxe-fmod/blob/master/fmod-scripts/ExportHaxeConstants.js) into your FMOD Studio scripts folder, then use `Ctrl+B` in FMOD Studio to regenerate constants and rebuild banks in one step. See the [fmod-scripts README](https://github.com/Tanz0rz/haxe-fmod/tree/master/fmod-scripts) for full setup instructions.
+See the [fmod-scripts README](https://github.com/Tanz0rz/haxe-fmod/tree/master/fmod-scripts) for setup instructions.
 
 ## Adding haxefmod to Your Own Game
 
