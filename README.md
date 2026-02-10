@@ -18,11 +18,7 @@ Download [FMOD Studio](https://fmod.com/download) (version 2.03.x) to create and
 ### 2. Install haxefmod
 
 ```bash
-# Install from haxelib (stable)
-haxelib install haxefmod
-
-# Or install from git (latest)
-haxelib git haxefmod https://github.com/Tanz0rz/haxe-fmod.git master
+haxelib git haxefmod https://github.com/Tanz0rz/haxe-fmod.git hashlink-refactor-windows
 ```
 
 Then install the required companion libraries:
