@@ -7,7 +7,7 @@ Integration test project for haxe-fmod. Uses a HaxeFlixel game (EZPlatformer) to
 ```
 Project.xml          - Lime/OpenFL project config (app name: EZPlatformerTestEdition)
 setup.sh             - Installs haxelib dependencies + haxefmod from git
-build.sh             - One-command build wrapper, calls haxe-fmod build scripts
+build.sh             - One-command build wrapper (runs lime build for the given target)
 source/              - Game source code (HaxeFlixel)
 assets/              - Game assets including FMOD banks (assets/fmod/Desktop/)
 ci/                  - CI validation scripts
@@ -27,6 +27,10 @@ This repo installs haxefmod via `haxelib git` from a configurable branch/repo. A
 - `HAXEFMOD_BRANCH` env var in the CI workflow controls which haxe-fmod branch to use
 - `setup.sh` defaults to `hashlink-refactor-build-cleanup` branch (overridable via env var)
 - **IMPORTANT**: Use `haxelib git ... --always` to ensure cached repos are updated in CI
+
+## Supported Platforms
+
+Build commands work on any Linux distro (developed on CachyOS/Arch), macOS, and Windows. The CI uses GitHub Actions runners (ubuntu-latest, macos-14, windows-latest) but these are not platform requirements.
 
 ## CI Workflow
 
