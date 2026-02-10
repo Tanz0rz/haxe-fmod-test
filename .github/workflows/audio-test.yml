@@ -1,0 +1,867 @@
+name: Build and Audio Test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  HAXE_VERSION: 4.3.6
+  HAXEFMOD_BRANCH: hashlink-refactor-windows
+  HAXEFMOD_REPO: https://github.com/Tanz0rz/haxe-fmod.git
+
+jobs:
+  # ===========================================================================
+  # Linux C++ Build + Audio Recording
+  # ===========================================================================
+  linux-cpp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Cache haxelib
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-cpp-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
+
+      - name: Install Haxe libraries
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install lime 8.3.0 --always --quiet
+          haxelib install openfl 9.5.0 --always --quiet
+          haxelib install flixel 6.1.2 --always --quiet
+          haxelib install hxcpp 4.3.2 --always --quiet
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          yes | haxelib run lime setup || true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio libasound2-plugins xvfb ffmpeg patchelf libgl1-mesa-dev
+
+      - name: Build C++ target
+        run: |
+          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
+          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
+          "$HAXEFMOD_DIR/scripts/build-linux.sh" .
+
+      - name: Patch FMOD libraries
+        run: |
+          BIN_DIR="export/linux64/bin"
+          if [ ! -d "$BIN_DIR" ]; then
+            BIN_DIR="export/linux/bin"
+          fi
+          patchelf --clear-execstack "$BIN_DIR"/libfmod.so* || true
+          patchelf --clear-execstack "$BIN_DIR"/libfmodstudio.so* || true
+
+      - name: Validate build output
+        run: |
+          BIN_DIR="export/linux64/bin"
+          if [ ! -d "$BIN_DIR" ]; then
+            BIN_DIR="export/linux/bin"
+          fi
+          echo "BIN_DIR=$BIN_DIR" >> "$GITHUB_ENV"
+          ./ci/validate-build.sh "$BIN_DIR" cpp
+
+      - name: Record audio
+        run: |
+          # Start virtual display
+          Xvfb :99 -screen 0 1024x768x24 &
+          export DISPLAY=:99
+          sleep 1
+
+          # Start PulseAudio with virtual sink
+          pulseaudio --start --exit-idle-time=-1 || true
+          pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=VirtualSpeaker
+          pactl set-default-sink virtual_speaker
+
+          # Configure ALSA to route through PulseAudio (FMOD uses ALSA by default)
+          cat > ~/.asoundrc << 'ALSA_EOF'
+          pcm.!default {
+            type pulse
+          }
+          ctl.!default {
+            type pulse
+          }
+          ALSA_EOF
+
+          # Start recording from the virtual sink's monitor
+          ffmpeg -f pulse -i virtual_speaker.monitor -t 30 -y /tmp/audio-linux-cpp.wav &
+          RECORD_PID=$!
+
+          # Run the game
+          cd "$BIN_DIR"
+          chmod +x run.sh
+          timeout 30 ./run.sh > /tmp/game-linux-cpp.log 2>&1 || true
+          cd -
+
+          echo "=== Game log ==="
+          cat /tmp/game-linux-cpp.log || true
+          echo "=== End game log ==="
+
+          # Wait for recording to finish
+          wait $RECORD_PID || true
+
+          if [ -f /tmp/audio-linux-cpp.wav ]; then
+            echo "Audio recorded successfully"
+            ls -la /tmp/audio-linux-cpp.wav
+          else
+            echo "WARNING: No audio file produced"
+          fi
+
+      - name: Validate audio
+        run: ./ci/validate-audio.sh /tmp/audio-linux-cpp.wav 10
+
+      - name: Validate game log
+        run: ./ci/validate-game-log.sh /tmp/game-linux-cpp.log
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audio-linux-cpp
+          path: |
+            /tmp/audio-linux-cpp.wav
+            /tmp/game-linux-cpp.log
+          if-no-files-found: warn
+
+  # ===========================================================================
+  # Linux HashLink Build + Audio Recording
+  # ===========================================================================
+  linux-hl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Cache haxelib
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-hl-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
+
+      - name: Install Haxe libraries
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install lime 8.3.0 --always --quiet
+          haxelib install openfl 9.5.0 --always --quiet
+          haxelib install flixel 6.1.2 --always --quiet
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          yes | haxelib run lime setup || true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio libasound2-plugins xvfb ffmpeg patchelf \
+            libpng-dev libturbojpeg0-dev libsdl2-dev libgl1-mesa-dev \
+            libopenal-dev libmbedtls-dev libuv1-dev libvorbis-dev libsqlite3-dev libz-dev
+
+      - name: Build and install HashLink
+        run: |
+          git clone --depth 1 https://github.com/HaxeFoundation/hashlink.git /tmp/hashlink-src
+          cd /tmp/hashlink-src
+          make -j$(nproc) 2>&1 | tee /tmp/hashlink-build.log || {
+            echo "=== MAKE FAILED - retrying single-threaded ==="
+            make 2>&1 | tee -a /tmp/hashlink-build.log
+            exit 1
+          }
+          sudo make install
+          sudo ldconfig
+          hl --version || echo "HashLink installed"
+
+      - name: Compile hlaxe_fmod.hdll
+        run: |
+          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
+          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
+          cd "$HAXEFMOD_DIR/native/hlaxe"
+          make clean
+          make
+
+      - name: Build HashLink target
+        run: |
+          "$HAXEFMOD_DIR/scripts/build-hl.sh" .
+
+      - name: Patch FMOD libraries
+        run: |
+          BIN_DIR="export/hl/bin"
+          patchelf --clear-execstack "$BIN_DIR"/libfmod.so* || true
+          patchelf --clear-execstack "$BIN_DIR"/libfmodstudio.so* || true
+
+      - name: Validate build output
+        run: |
+          BIN_DIR="export/hl/bin"
+          echo "BIN_DIR=$BIN_DIR" >> "$GITHUB_ENV"
+          ./ci/validate-build.sh "$BIN_DIR" hl
+
+      - name: Record audio
+        run: |
+          # Start virtual display
+          Xvfb :99 -screen 0 1024x768x24 &
+          export DISPLAY=:99
+          sleep 1
+
+          # Start PulseAudio with virtual sink
+          pulseaudio --start --exit-idle-time=-1 || true
+          pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=VirtualSpeaker
+          pactl set-default-sink virtual_speaker
+
+          # Configure ALSA to route through PulseAudio (FMOD uses ALSA by default)
+          cat > ~/.asoundrc << 'ALSA_EOF'
+          pcm.!default {
+            type pulse
+          }
+          ctl.!default {
+            type pulse
+          }
+          ALSA_EOF
+
+          BIN_DIR="export/hl/bin"
+
+          # Ensure .so symlinks exist
+          cd "$BIN_DIR"
+          ln -sf libfmod.so.11 libfmod.so 2>/dev/null || true
+          ln -sf libfmodstudio.so.11 libfmodstudio.so 2>/dev/null || true
+          cd -
+
+          # Start recording from the virtual sink's monitor
+          ffmpeg -f pulse -i virtual_speaker.monitor -t 30 -y /tmp/audio-linux-hl.wav &
+          RECORD_PID=$!
+
+          # Run the game with library paths set
+          cd "$BIN_DIR"
+          chmod +x run.sh
+          export LD_LIBRARY_PATH="$(pwd):$LD_LIBRARY_PATH"
+          timeout 30 ./run.sh > /tmp/game-linux-hl.log 2>&1 || true
+          cd -
+
+          echo "=== Game log ==="
+          cat /tmp/game-linux-hl.log || true
+          echo "=== End game log ==="
+
+          wait $RECORD_PID || true
+
+          if [ -f /tmp/audio-linux-hl.wav ]; then
+            echo "Audio recorded successfully"
+            ls -la /tmp/audio-linux-hl.wav
+          else
+            echo "WARNING: No audio file produced"
+          fi
+
+      - name: Validate audio
+        run: ./ci/validate-audio.sh /tmp/audio-linux-hl.wav 10
+
+      - name: Validate game log
+        run: ./ci/validate-game-log.sh /tmp/game-linux-hl.log
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audio-linux-hl
+          path: |
+            /tmp/audio-linux-hl.wav
+            /tmp/game-linux-hl.log
+          if-no-files-found: warn
+
+  # ===========================================================================
+  # Linux HTML5 Build + Audio Recording via Browser
+  # ===========================================================================
+  linux-html5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Cache haxelib
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-html5-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
+
+      - name: Install Haxe libraries
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install lime 8.3.0 --always --quiet
+          haxelib install openfl 9.5.0 --always --quiet
+          haxelib install flixel 6.1.2 --always --quiet
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          yes | haxelib run lime setup || true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio libasound2-plugins xvfb ffmpeg chromium-browser xdotool
+
+      - name: Build HTML5 target
+        run: |
+          haxelib run lime build html5
+
+      - name: Record audio
+        run: |
+          # Start virtual display
+          Xvfb :99 -screen 0 1024x768x24 &
+          export DISPLAY=:99
+          sleep 1
+
+          # Start PulseAudio with virtual sink
+          pulseaudio --start --exit-idle-time=-1 || true
+          pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=VirtualSpeaker
+          pactl set-default-sink virtual_speaker
+
+          # Configure ALSA to route through PulseAudio
+          cat > ~/.asoundrc << 'ALSA_EOF'
+          pcm.!default {
+            type pulse
+          }
+          ctl.!default {
+            type pulse
+          }
+          ALSA_EOF
+
+          # Serve the HTML5 build
+          cd export/html5/bin
+          python3 -m http.server 8080 &
+          HTTP_PID=$!
+          cd -
+          sleep 1
+
+          # Launch Chromium with autoplay enabled
+          chromium-browser \
+            --no-sandbox \
+            --disable-gpu \
+            --autoplay-policy=no-user-gesture-required \
+            --window-size=640,480 \
+            --window-position=0,0 \
+            http://localhost:8080 &
+          CHROME_PID=$!
+          sleep 3
+
+          # Click on the browser window to ensure focus
+          xdotool mousemove 320 240 click 1
+          sleep 1
+
+          # Start recording from the virtual sink's monitor
+          ffmpeg -f pulse -i virtual_speaker.monitor -t 30 -y /tmp/audio-html5.wav &
+          RECORD_PID=$!
+
+          sleep 31
+
+          kill $CHROME_PID || true
+          kill $HTTP_PID || true
+          wait $RECORD_PID || true
+
+          if [ -f /tmp/audio-html5.wav ]; then
+            echo "Audio recorded successfully"
+            ls -la /tmp/audio-html5.wav
+          else
+            echo "WARNING: No audio file produced"
+          fi
+
+      - name: Validate audio
+        run: ./ci/validate-audio.sh /tmp/audio-html5.wav 10
+
+      - name: Upload audio artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audio-html5
+          path: /tmp/audio-html5.wav
+          if-no-files-found: warn
+
+  # ===========================================================================
+  # macOS C++ Build + Audio Recording
+  # ===========================================================================
+  mac-cpp:
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Haxe via Homebrew
+        run: |
+          brew install haxe neko ffmpeg
+          echo "HAXE_STD_PATH=$(brew --prefix)/lib/haxe/std" >> $GITHUB_ENV
+
+      - name: Cache haxelib
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-cpp-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
+
+      - name: Install Haxe libraries
+        run: |
+          mkdir -p ~/haxelib
+          haxelib setup ~/haxelib
+          haxelib install lime 8.3.0 --always --quiet
+          haxelib install openfl 9.5.0 --always --quiet
+          haxelib install flixel 6.1.2 --always --quiet
+          haxelib install hxcpp 4.3.2 --always --quiet
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          yes | haxelib run lime setup || true
+
+      - name: Build C++ target
+        run: |
+          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
+          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
+          "$HAXEFMOD_DIR/scripts/build-mac.sh" .
+
+      - name: Validate build output
+        run: |
+          APP_BUNDLE=$(find export -name "*.app" -path "*mac*" 2>/dev/null | head -1)
+          echo "APP_BUNDLE=$APP_BUNDLE" >> "$GITHUB_ENV"
+          ./ci/validate-build.sh "$APP_BUNDLE/Contents/MacOS" cpp
+
+      - name: Record audio via FMOD wavwriter
+        run: |
+          echo "Found app: $APP_BUNDLE"
+
+          export FMOD_WAVWRITER=/tmp/audio-mac-cpp.wav
+
+          "$APP_BUNDLE/Contents/MacOS/"* > /tmp/game-mac-cpp.log 2>&1 &
+          GAME_PID=$!
+          for i in $(seq 60); do
+            kill -0 $GAME_PID 2>/dev/null || break
+            sleep 1
+          done
+          kill $GAME_PID 2>/dev/null || true
+          wait $GAME_PID 2>/dev/null || true
+
+          echo "=== Game log ==="
+          cat /tmp/game-mac-cpp.log || true
+          echo "=== End game log ==="
+
+          if [ -f /tmp/audio-mac-cpp.wav ]; then
+            echo "Audio recorded successfully"
+            ls -la /tmp/audio-mac-cpp.wav
+          else
+            echo "WARNING: No audio file produced"
+          fi
+
+      - name: Validate audio
+        run: ./ci/validate-audio.sh /tmp/audio-mac-cpp.wav 10
+
+      - name: Validate game log
+        run: ./ci/validate-game-log.sh /tmp/game-mac-cpp.log
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audio-mac-cpp
+          path: |
+            /tmp/audio-mac-cpp.wav
+            /tmp/game-mac-cpp.log
+          if-no-files-found: warn
+
+  # ===========================================================================
+  # macOS HashLink Build + Audio Recording
+  # ===========================================================================
+  mac-hl:
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Haxe via Homebrew
+        run: |
+          brew install haxe neko hashlink ffmpeg
+          echo "HAXE_STD_PATH=$(brew --prefix)/lib/haxe/std" >> $GITHUB_ENV
+
+      - name: Cache haxelib
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-hl-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
+
+      - name: Install Haxe libraries
+        run: |
+          mkdir -p ~/haxelib
+          haxelib setup ~/haxelib
+          haxelib install lime 8.3.0 --always --quiet
+          haxelib install openfl 9.5.0 --always --quiet
+          haxelib install flixel 6.1.2 --always --quiet
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          yes | haxelib run lime setup || true
+
+      - name: Compile hlaxe_fmod.hdll
+        run: |
+          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
+          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
+          FMOD_CORE="$HAXEFMOD_DIR/lib/Mac/api/core"
+          FMOD_STUDIO="$HAXEFMOD_DIR/lib/Mac/api/studio"
+          HL_PREFIX="$(brew --prefix hashlink)"
+
+          cd "$HAXEFMOD_DIR/native/hlaxe"
+          cc -dynamiclib -arch x86_64 -O2 -o hlaxe_fmod.hdll hlaxe_fmod.c \
+            -I"$HL_PREFIX/include" \
+            -I"$FMOD_CORE/inc" \
+            -I"$FMOD_STUDIO/inc" \
+            -L"$FMOD_CORE/lib" \
+            -L"$FMOD_STUDIO/inc/lib" \
+            -lfmod -lfmodstudio \
+            -install_name @executable_path/hlaxe_fmod.hdll
+
+      - name: Build HashLink target
+        run: |
+          haxelib run lime build hl
+
+      - name: Copy FMOD dependencies
+        run: |
+          APP_BUNDLE=$(find export/hl -name "*.app" 2>/dev/null | head -1)
+          echo "APP_BUNDLE=$APP_BUNDLE" >> "$GITHUB_ENV"
+          APP_MACOS="$APP_BUNDLE/Contents/MacOS"
+
+          cp "$HAXEFMOD_DIR/native/hlaxe/hlaxe_fmod.hdll" "$APP_MACOS/"
+          cp "$HAXEFMOD_DIR/lib/Mac/api/core/lib/libfmod.dylib" "$APP_MACOS/"
+          cp "$HAXEFMOD_DIR/lib/Mac/api/studio/inc/lib/libfmodstudio.dylib" "$APP_MACOS/"
+
+      - name: Validate build output
+        run: |
+          ./ci/validate-build.sh "$APP_BUNDLE/Contents/MacOS" hl
+
+      - name: Record audio via FMOD wavwriter
+        run: |
+          echo "Found app: $APP_BUNDLE"
+
+          export FMOD_WAVWRITER=/tmp/audio-mac-hl.wav
+
+          "$APP_BUNDLE/Contents/MacOS/"* > /tmp/game-mac-hl.log 2>&1 &
+          GAME_PID=$!
+          for i in $(seq 60); do
+            kill -0 $GAME_PID 2>/dev/null || break
+            sleep 1
+          done
+          kill $GAME_PID 2>/dev/null || true
+          wait $GAME_PID 2>/dev/null || true
+
+          echo "=== Game log ==="
+          cat /tmp/game-mac-hl.log || true
+          echo "=== End game log ==="
+
+          if [ -f /tmp/audio-mac-hl.wav ]; then
+            echo "Audio recorded successfully"
+            ls -la /tmp/audio-mac-hl.wav
+          else
+            echo "WARNING: No audio file produced"
+          fi
+
+      - name: Validate audio
+        run: ./ci/validate-audio.sh /tmp/audio-mac-hl.wav 10
+
+      - name: Validate game log
+        run: ./ci/validate-game-log.sh /tmp/game-mac-hl.log
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audio-mac-hl
+          path: |
+            /tmp/audio-mac-hl.wav
+            /tmp/game-mac-hl.log
+          if-no-files-found: warn
+
+  # ===========================================================================
+  # Windows C++ Build + Audio Recording
+  # ===========================================================================
+  windows-cpp:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Install ffmpeg
+        shell: powershell
+        run: choco install ffmpeg -y --no-progress
+
+      - name: Add ffmpeg to PATH
+        run: |
+          echo "C:\\ProgramData\\chocolatey\\bin" >> "$GITHUB_PATH"
+          for d in /c/ProgramData/chocolatey/lib/ffmpeg/tools/*/bin; do
+            [ -d "$d" ] && cygpath -w "$d" >> "$GITHUB_PATH"
+          done
+          export PATH="/c/ProgramData/chocolatey/bin:$PATH"
+          ffprobe -version | head -1 || echo "WARNING: ffprobe not found yet"
+
+      - name: Cache haxelib
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-cpp-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
+
+      - name: Install Haxe libraries
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install lime 8.3.0 --always --quiet
+          haxelib install openfl 9.5.0 --always --quiet
+          haxelib install flixel 6.1.2 --always --quiet
+          haxelib install hxcpp 4.3.2 --always --quiet
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          yes | haxelib run lime setup || true
+
+      - name: Build C++ target
+        run: |
+          haxelib run lime build windows -64
+
+      - name: Validate build output
+        run: |
+          BIN_DIR=$(find export -type d -name "bin" -path "*windows*" | head -1)
+          echo "BIN_DIR=$BIN_DIR" >> "$GITHUB_ENV"
+          ./ci/validate-build.sh "$BIN_DIR" cpp
+
+      - name: Record audio via FMOD wavwriter
+        run: |
+          EXE=$(find "$BIN_DIR" -maxdepth 1 -name "*.exe" | head -1)
+          echo "Found exe: $EXE"
+
+          export FMOD_WAVWRITER="$GITHUB_WORKSPACE/audio-windows-cpp.wav"
+
+          cd "$BIN_DIR"
+          timeout 60 "./$(basename "$EXE")" > "$GITHUB_WORKSPACE/game-windows-cpp.log" 2>&1 || true
+          cd -
+
+          echo "=== Game log ==="
+          cat "$GITHUB_WORKSPACE/game-windows-cpp.log" || true
+          echo "=== End game log ==="
+
+          if [ -f "$GITHUB_WORKSPACE/audio-windows-cpp.wav" ]; then
+            echo "Audio recorded successfully"
+            ls -la "$GITHUB_WORKSPACE/audio-windows-cpp.wav"
+          else
+            echo "WARNING: No audio file produced"
+          fi
+
+      - name: Fix WAV header
+        shell: python
+        run: |
+          import struct, os
+          wav = os.path.join(os.environ['GITHUB_WORKSPACE'], 'audio-windows-cpp.wav')
+          if os.path.exists(wav):
+              with open(wav, 'r+b') as f:
+                  f.seek(22)
+                  num_channels = struct.unpack('<H', f.read(2))[0]
+                  if num_channels == 0:
+                      print(f"Fixing WAV header: 0 channels -> 2 channels (stereo)")
+                      f.seek(22)
+                      f.write(struct.pack('<H', 2))
+                      f.seek(28)
+                      f.write(struct.pack('<I', 192000))
+                      f.write(struct.pack('<H', 4))
+                      print("WAV header fixed")
+                  else:
+                      print(f"WAV header OK ({num_channels} channels)")
+          else:
+              print(f"WAV file not found: {wav}")
+
+      - name: Validate audio
+        run: ./ci/validate-audio.sh "$GITHUB_WORKSPACE/audio-windows-cpp.wav" 10
+
+      - name: Validate game log
+        run: ./ci/validate-game-log.sh "$GITHUB_WORKSPACE/game-windows-cpp.log"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audio-windows-cpp
+          path: |
+            audio-windows-cpp.wav
+            game-windows-cpp.log
+          if-no-files-found: warn
+
+  # ===========================================================================
+  # Windows HashLink Build + Audio Recording
+  # ===========================================================================
+  windows-hl:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Install ffmpeg
+        shell: powershell
+        run: choco install ffmpeg -y --no-progress
+
+      - name: Add ffmpeg to PATH
+        run: |
+          echo "C:\\ProgramData\\chocolatey\\bin" >> "$GITHUB_PATH"
+          for d in /c/ProgramData/chocolatey/lib/ffmpeg/tools/*/bin; do
+            [ -d "$d" ] && cygpath -w "$d" >> "$GITHUB_PATH"
+          done
+          export PATH="/c/ProgramData/chocolatey/bin:$PATH"
+          ffprobe -version | head -1 || echo "WARNING: ffprobe not found yet"
+
+      - name: Cache haxelib
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-hl-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
+
+      - name: Install Haxe libraries
+        run: |
+          haxelib setup ~/haxelib
+          haxelib install lime 8.3.0 --always --quiet
+          haxelib install openfl 9.5.0 --always --quiet
+          haxelib install flixel 6.1.2 --always --quiet
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          yes | haxelib run lime setup || true
+
+      - name: Build and install HashLink
+        shell: powershell
+        run: |
+          $HL_URL = "https://github.com/HaxeFoundation/hashlink/releases/download/1.14/hashlink-1.14.0-win.zip"
+          Write-Host "Downloading HashLink from $HL_URL"
+          Invoke-WebRequest -Uri $HL_URL -OutFile "C:\hashlink.zip"
+          Expand-Archive -Path "C:\hashlink.zip" -DestinationPath "C:\"
+          $HL_DIR = Get-ChildItem "C:\" -Directory | Where-Object { $_.Name -like "hashlink*" } | Select-Object -First 1
+          Rename-Item $HL_DIR.FullName "C:\hashlink"
+          echo "C:\hashlink" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "HASHLINK_DIR=C:\hashlink" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "HashLink contents:"
+          Get-ChildItem "C:\hashlink" | Format-Table Name, Length
+          try { & "C:\hashlink\hl.exe" --version 2>&1 } catch { Write-Host "hl --version not supported" }
+
+      - name: Compile hlaxe_fmod.hdll
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          for /f "delims=" %%i in ('haxelib path haxefmod') do set HAXEFMOD_DIR=%%i& goto :found
+          :found
+          cd %HAXEFMOD_DIR%\native\hlaxe
+          cl /LD /O2 /DWIN32 hlaxe_fmod.c ^
+            /I"C:\hashlink\include" ^
+            /I"%HAXEFMOD_DIR%\lib\Windows\api\core\inc" ^
+            /I"%HAXEFMOD_DIR%\lib\Windows\api\studio\inc" ^
+            /link ^
+            /LIBPATH:"%HAXEFMOD_DIR%\lib\Windows\api\core\lib\x64" ^
+            /LIBPATH:"%HAXEFMOD_DIR%\lib\Windows\api\studio\lib\x64" ^
+            fmod_vc.lib fmodstudio_vc.lib ^
+            /LIBPATH:"C:\hashlink" libhl.lib ^
+            /OUT:hlaxe_fmod.hdll
+          if %ERRORLEVEL% NEQ 0 (
+            echo "MSVC compilation failed"
+            exit /b 1
+          )
+          echo "hlaxe_fmod.hdll compiled successfully"
+          dir hlaxe_fmod.hdll
+
+      - name: Build HashLink target
+        run: |
+          haxelib run lime build hl
+
+      - name: Copy dependencies to output
+        run: |
+          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
+          BIN_DIR="export/hl/bin"
+          if [ ! -d "$BIN_DIR" ]; then
+            echo "ERROR: No HL bin directory found"
+            find export -type d
+            exit 1
+          fi
+          echo "Copying FMOD DLLs and hlaxe_fmod.hdll to $BIN_DIR"
+
+          cp "$HAXEFMOD_DIR/lib/Windows/api/core/lib/x64/fmod.dll" "$BIN_DIR/"
+          cp "$HAXEFMOD_DIR/lib/Windows/api/studio/lib/x64/fmodstudio.dll" "$BIN_DIR/"
+          cp "$HAXEFMOD_DIR/native/hlaxe/hlaxe_fmod.hdll" "$BIN_DIR/"
+
+          echo "Bin dir contents:"
+          ls -la "$BIN_DIR"
+
+      - name: Validate build output
+        run: |
+          BIN_DIR="export/hl/bin"
+          echo "BIN_DIR=$BIN_DIR" >> "$GITHUB_ENV"
+          ./ci/validate-build.sh "$BIN_DIR" hl
+
+      - name: Record audio via FMOD wavwriter
+        run: |
+          EXE=$(find "$BIN_DIR" -maxdepth 1 -name "*.exe" | head -1)
+          echo "Found exe: $EXE"
+
+          export FMOD_WAVWRITER="$GITHUB_WORKSPACE/audio-windows-hl.wav"
+
+          cd "$BIN_DIR"
+          timeout 60 "./$(basename "$EXE")" > "$GITHUB_WORKSPACE/game-windows-hl.log" 2>&1 || true
+          cd -
+
+          echo "=== Game log ==="
+          cat "$GITHUB_WORKSPACE/game-windows-hl.log" || true
+          echo "=== End game log ==="
+
+          if [ -f "$GITHUB_WORKSPACE/audio-windows-hl.wav" ]; then
+            echo "Audio recorded successfully"
+            ls -la "$GITHUB_WORKSPACE/audio-windows-hl.wav"
+          else
+            echo "WARNING: No audio file produced"
+          fi
+
+      - name: Fix WAV header
+        shell: python
+        run: |
+          import struct, os
+          wav = os.path.join(os.environ['GITHUB_WORKSPACE'], 'audio-windows-hl.wav')
+          if os.path.exists(wav):
+              with open(wav, 'r+b') as f:
+                  f.seek(22)
+                  num_channels = struct.unpack('<H', f.read(2))[0]
+                  if num_channels == 0:
+                      print(f"Fixing WAV header: 0 channels -> 2 channels (stereo)")
+                      f.seek(22)
+                      f.write(struct.pack('<H', 2))
+                      f.seek(28)
+                      f.write(struct.pack('<I', 192000))
+                      f.write(struct.pack('<H', 4))
+                      print("WAV header fixed")
+                  else:
+                      print(f"WAV header OK ({num_channels} channels)")
+          else:
+              print(f"WAV file not found: {wav}")
+
+      - name: Validate audio
+        run: ./ci/validate-audio.sh "$GITHUB_WORKSPACE/audio-windows-hl.wav" 10
+
+      - name: Validate game log
+        run: ./ci/validate-game-log.sh "$GITHUB_WORKSPACE/game-windows-hl.log"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audio-windows-hl
+          path: |
+            audio-windows-hl.wav
+            game-windows-hl.log
+          if-no-files-found: warn
