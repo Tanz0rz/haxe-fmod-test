@@ -100,10 +100,8 @@ HTML5 builds require a startup scene to load FMOD before the game starts. See [s
 git clone https://github.com/Tanz0rz/haxe-fmod-test.git
 cd haxe-fmod-test
 ./setup.sh
-./build.sh <target>
+lime test hl
 ```
-
-Available targets: `html5`, `linux`, `mac`, `hl`, `windows`
 
 ## CI
 

@@ -7,7 +7,6 @@ Integration test project for haxe-fmod. Uses a HaxeFlixel game (EZPlatformer) to
 ```
 Project.xml          - Lime/OpenFL project config (app name: EZPlatformerTestEdition)
 setup.sh             - Installs haxelib dependencies + haxefmod from git
-build.sh             - One-command build wrapper (runs lime build for the given target)
 source/              - Game source code (HaxeFlixel)
 assets/              - Game assets including FMOD banks (assets/fmod/Desktop/)
 ci/                  - CI validation scripts
