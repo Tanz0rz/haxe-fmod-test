@@ -31,7 +31,7 @@ haxelib install hxcpp 4.3.2 --always --quiet
 
 # Install haxefmod from git branch
 echo "Installing haxefmod from $HAXEFMOD_REPO @ $HAXEFMOD_BRANCH"
-haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
 
 # Setup lime
 yes | haxelib run lime setup || true
