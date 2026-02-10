@@ -2,3 +2,5 @@ export/
 *.n
 *.hxsol
 ci/artifacts/
+.DS_Store
+fmod-sdk/
