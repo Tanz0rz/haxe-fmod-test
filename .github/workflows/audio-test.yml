@@ -29,6 +29,7 @@ jobs:
 
       - name: Download FMOD SDK
         run: |
+          echo ">>> Cloning fmod-sdk-cache at tag v1..."
           git clone --depth 1 --branch v1 \
             https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
             "$FMOD_SDK"
@@ -46,21 +47,32 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
+          echo ">>> Setting up haxelib..."
           haxelib setup ~/haxelib
+          echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
+          echo ">>> Installing openfl 9.5.0..."
           haxelib install openfl 9.5.0 --always --quiet
+          echo ">>> Installing flixel 6.1.2..."
           haxelib install flixel 6.1.2 --always --quiet
+          echo ">>> Installing hxcpp 4.3.2..."
           haxelib install hxcpp 4.3.2 --always --quiet
+          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
           haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
+          echo ">>> Running lime setup..."
           yes | haxelib run lime setup || true
 
       - name: Install system dependencies
         run: |
+          echo ">>> Updating apt..."
           sudo apt-get update
+          echo ">>> Installing pulseaudio, ffmpeg, patchelf, etc..."
           sudo apt-get install -y pulseaudio libasound2-plugins xvfb ffmpeg patchelf libgl1-mesa-dev
 
       - name: Build C++ target
-        run: haxelib run lime build linux -64
+        run: |
+          echo ">>> Building C++ linux target..."
+          haxelib run lime build linux -64
 
       - name: Patch FMOD libraries
         run: |
@@ -68,6 +80,7 @@ jobs:
           if [ ! -d "$BIN_DIR" ]; then
             BIN_DIR="export/linux/bin"
           fi
+          echo ">>> Patching FMOD libraries in $BIN_DIR..."
           patchelf --clear-execstack "$BIN_DIR"/libfmod.so* || true
           patchelf --clear-execstack "$BIN_DIR"/libfmodstudio.so* || true
 
@@ -78,21 +91,22 @@ jobs:
             BIN_DIR="export/linux/bin"
           fi
           echo "BIN_DIR=$BIN_DIR" >> "$GITHUB_ENV"
+          echo ">>> Validating build output in $BIN_DIR..."
           ./ci/validate-build.sh "$BIN_DIR" cpp
 
       - name: Record audio
         run: |
-          # Start virtual display
+          echo ">>> Starting Xvfb virtual display..."
           Xvfb :99 -screen 0 1024x768x24 &
           export DISPLAY=:99
           sleep 1
 
-          # Start PulseAudio with virtual sink
+          echo ">>> Starting PulseAudio with virtual sink..."
           pulseaudio --start --exit-idle-time=-1 || true
           pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=VirtualSpeaker
           pactl set-default-sink virtual_speaker
 
-          # Configure ALSA to route through PulseAudio (FMOD uses ALSA by default)
+          echo ">>> Configuring ALSA to route through PulseAudio..."
           cat > ~/.asoundrc << 'ALSA_EOF'
           pcm.!default {
             type pulse
@@ -102,11 +116,11 @@ jobs:
           }
           ALSA_EOF
 
-          # Start recording from the virtual sink's monitor
+          echo ">>> Starting ffmpeg recording from virtual sink..."
           ffmpeg -f pulse -i virtual_speaker.monitor -t 30 -y /tmp/audio-linux-cpp.wav &
           RECORD_PID=$!
 
-          # Run the game
+          echo ">>> Running game executable..."
           cd "$BIN_DIR"
           chmod +x run.sh
           timeout 30 ./run.sh > /tmp/game-linux-cpp.log 2>&1 || true
@@ -116,6 +130,7 @@ jobs:
           cat /tmp/game-linux-cpp.log || true
           echo "=== End game log ==="
 
+          echo ">>> Waiting for recording to finish..."
           wait $RECORD_PID || true
 
           if [ -f /tmp/audio-linux-cpp.wav ]; then
@@ -126,10 +141,14 @@ jobs:
           fi
 
       - name: Validate audio
-        run: ./ci/validate-audio.sh /tmp/audio-linux-cpp.wav 10
+        run: |
+          echo ">>> Validating audio file..."
+          ./ci/validate-audio.sh /tmp/audio-linux-cpp.wav 10
 
       - name: Validate game log
-        run: ./ci/validate-game-log.sh /tmp/game-linux-cpp.log
+        run: |
+          echo ">>> Validating game log..."
+          ./ci/validate-game-log.sh /tmp/game-linux-cpp.log
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -152,6 +171,7 @@ jobs:
 
       - name: Download FMOD SDK
         run: |
+          echo ">>> Cloning fmod-sdk-cache at tag v1..."
           git clone --depth 1 --branch v1 \
             https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
             "$FMOD_SDK"
@@ -169,59 +189,75 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
+          echo ">>> Setting up haxelib..."
           haxelib setup ~/haxelib
+          echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
+          echo ">>> Installing openfl 9.5.0..."
           haxelib install openfl 9.5.0 --always --quiet
+          echo ">>> Installing flixel 6.1.2..."
           haxelib install flixel 6.1.2 --always --quiet
+          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
           haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
+          echo ">>> Running lime setup..."
           yes | haxelib run lime setup || true
 
       - name: Install system dependencies
         run: |
+          echo ">>> Updating apt..."
           sudo apt-get update
+          echo ">>> Installing pulseaudio, ffmpeg, patchelf, hashlink deps..."
           sudo apt-get install -y pulseaudio libasound2-plugins xvfb ffmpeg patchelf \
             libpng-dev libturbojpeg0-dev libsdl2-dev libgl1-mesa-dev \
             libopenal-dev libmbedtls-dev libuv1-dev libvorbis-dev libsqlite3-dev libz-dev
 
       - name: Build and install HashLink
         run: |
+          echo ">>> Cloning HashLink source..."
           git clone --depth 1 https://github.com/HaxeFoundation/hashlink.git /tmp/hashlink-src
           cd /tmp/hashlink-src
+          echo ">>> Building HashLink (parallel)..."
           make -j$(nproc) 2>&1 | tee /tmp/hashlink-build.log || {
             echo "=== MAKE FAILED - retrying single-threaded ==="
             make 2>&1 | tee -a /tmp/hashlink-build.log
             exit 1
           }
+          echo ">>> Installing HashLink..."
           sudo make install
           sudo ldconfig
           hl --version || echo "HashLink installed"
 
       - name: Build HashLink target
-        run: haxelib run lime build hl
+        run: |
+          echo ">>> Building HashLink target..."
+          haxelib run lime build hl
 
       - name: Patch FMOD libraries
         run: |
           BIN_DIR="export/hl/bin"
           echo "BIN_DIR=$BIN_DIR" >> "$GITHUB_ENV"
+          echo ">>> Patching FMOD libraries in $BIN_DIR..."
           patchelf --clear-execstack "$BIN_DIR"/libfmod.so* || true
           patchelf --clear-execstack "$BIN_DIR"/libfmodstudio.so* || true
 
       - name: Validate build output
-        run: ./ci/validate-build.sh "$BIN_DIR" hl
+        run: |
+          echo ">>> Validating build output..."
+          ./ci/validate-build.sh "$BIN_DIR" hl
 
       - name: Record audio
         run: |
-          # Start virtual display
+          echo ">>> Starting Xvfb virtual display..."
           Xvfb :99 -screen 0 1024x768x24 &
           export DISPLAY=:99
           sleep 1
 
-          # Start PulseAudio with virtual sink
+          echo ">>> Starting PulseAudio with virtual sink..."
           pulseaudio --start --exit-idle-time=-1 || true
           pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=VirtualSpeaker
           pactl set-default-sink virtual_speaker
 
-          # Configure ALSA to route through PulseAudio (FMOD uses ALSA by default)
+          echo ">>> Configuring ALSA to route through PulseAudio..."
           cat > ~/.asoundrc << 'ALSA_EOF'
           pcm.!default {
             type pulse
@@ -233,21 +269,22 @@ jobs:
 
           BIN_DIR="export/hl/bin"
 
-          # Ensure .so symlinks exist
+          echo ">>> Creating .so symlinks..."
           cd "$BIN_DIR"
           ln -sf libfmod.so.11 libfmod.so 2>/dev/null || true
           ln -sf libfmodstudio.so.11 libfmodstudio.so 2>/dev/null || true
           cd -
 
-          # Start recording from the virtual sink's monitor
+          echo ">>> Starting ffmpeg recording from virtual sink..."
           ffmpeg -f pulse -i virtual_speaker.monitor -t 30 -y /tmp/audio-linux-hl.wav &
           RECORD_PID=$!
 
-          # Run the game with library paths set
+          echo ">>> Finding and running game executable..."
           cd "$BIN_DIR"
           EXE=$(find . -maxdepth 1 -type f -executable ! -name "*.so*" ! -name "*.hdll" ! -name "run.sh" -print -quit)
           export LD_LIBRARY_PATH="$(pwd):$LD_LIBRARY_PATH"
           chmod +x "$EXE"
+          echo ">>> Running $EXE..."
           timeout 30 "$EXE" > /tmp/game-linux-hl.log 2>&1 || true
           cd -
 
@@ -255,6 +292,7 @@ jobs:
           cat /tmp/game-linux-hl.log || true
           echo "=== End game log ==="
 
+          echo ">>> Waiting for recording to finish..."
           wait $RECORD_PID || true
 
           if [ -f /tmp/audio-linux-hl.wav ]; then
@@ -265,10 +303,14 @@ jobs:
           fi
 
       - name: Validate audio
-        run: ./ci/validate-audio.sh /tmp/audio-linux-hl.wav 10
+        run: |
+          echo ">>> Validating audio file..."
+          ./ci/validate-audio.sh /tmp/audio-linux-hl.wav 10
 
       - name: Validate game log
-        run: ./ci/validate-game-log.sh /tmp/game-linux-hl.log
+        run: |
+          echo ">>> Validating game log..."
+          ./ci/validate-game-log.sh /tmp/game-linux-hl.log
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -291,6 +333,7 @@ jobs:
 
       - name: Download FMOD SDK
         run: |
+          echo ">>> Cloning fmod-sdk-cache at tag v1..."
           git clone --depth 1 --branch v1 \
             https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
             "$FMOD_SDK"
@@ -308,34 +351,44 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
+          echo ">>> Setting up haxelib..."
           haxelib setup ~/haxelib
+          echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
+          echo ">>> Installing openfl 9.5.0..."
           haxelib install openfl 9.5.0 --always --quiet
+          echo ">>> Installing flixel 6.1.2..."
           haxelib install flixel 6.1.2 --always --quiet
+          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
           haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
+          echo ">>> Running lime setup..."
           yes | haxelib run lime setup || true
 
       - name: Install system dependencies
         run: |
+          echo ">>> Updating apt..."
           sudo apt-get update
+          echo ">>> Installing pulseaudio, ffmpeg, chromium, xdotool..."
           sudo apt-get install -y pulseaudio libasound2-plugins xvfb ffmpeg chromium-browser xdotool
 
       - name: Build HTML5 target
-        run: haxelib run lime build html5
+        run: |
+          echo ">>> Building HTML5 target..."
+          haxelib run lime build html5
 
       - name: Record audio
         run: |
-          # Start virtual display
+          echo ">>> Starting Xvfb virtual display..."
           Xvfb :99 -screen 0 1024x768x24 &
           export DISPLAY=:99
           sleep 1
 
-          # Start PulseAudio with virtual sink
+          echo ">>> Starting PulseAudio with virtual sink..."
           pulseaudio --start --exit-idle-time=-1 || true
           pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=VirtualSpeaker
           pactl set-default-sink virtual_speaker
 
-          # Configure ALSA to route through PulseAudio
+          echo ">>> Configuring ALSA to route through PulseAudio..."
           cat > ~/.asoundrc << 'ALSA_EOF'
           pcm.!default {
             type pulse
@@ -345,14 +398,14 @@ jobs:
           }
           ALSA_EOF
 
-          # Serve the HTML5 build
+          echo ">>> Starting HTTP server for HTML5 build..."
           cd export/html5/bin
           python3 -m http.server 8080 &
           HTTP_PID=$!
           cd -
           sleep 1
 
-          # Launch Chromium with autoplay enabled
+          echo ">>> Launching Chromium with autoplay enabled..."
           chromium-browser \
             --no-sandbox \
             --disable-gpu \
@@ -363,18 +416,21 @@ jobs:
           CHROME_PID=$!
           sleep 3
 
-          # Click on the browser window to ensure focus
+          echo ">>> Clicking browser window for focus..."
           xdotool mousemove 320 240 click 1
           sleep 1
 
-          # Start recording from the virtual sink's monitor
+          echo ">>> Starting ffmpeg recording from virtual sink..."
           ffmpeg -f pulse -i virtual_speaker.monitor -t 30 -y /tmp/audio-html5.wav &
           RECORD_PID=$!
 
+          echo ">>> Waiting 31s for recording to complete..."
           sleep 31
 
+          echo ">>> Stopping Chromium and HTTP server..."
           kill $CHROME_PID || true
           kill $HTTP_PID || true
+          echo ">>> Waiting for recording to finish..."
           wait $RECORD_PID || true
 
           if [ -f /tmp/audio-html5.wav ]; then
@@ -385,7 +441,9 @@ jobs:
           fi
 
       - name: Validate audio
-        run: ./ci/validate-audio.sh /tmp/audio-html5.wav 10
+        run: |
+          echo ">>> Validating audio file..."
+          ./ci/validate-audio.sh /tmp/audio-html5.wav 10
 
       - name: Upload audio artifact
         uses: actions/upload-artifact@v4
@@ -406,12 +464,14 @@ jobs:
 
       - name: Download FMOD SDK
         run: |
+          echo ">>> Cloning fmod-sdk-cache at tag v1..."
           git clone --depth 1 --branch v1 \
             https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
             "$FMOD_SDK"
 
       - name: Setup Haxe via Homebrew
         run: |
+          echo ">>> Installing haxe, neko, ffmpeg via homebrew..."
           brew install haxe neko ffmpeg
           echo "HAXE_STD_PATH=$(brew --prefix)/lib/haxe/std" >> $GITHUB_ENV
 
@@ -423,36 +483,49 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
+          echo ">>> Setting up haxelib..."
           mkdir -p ~/haxelib
           haxelib setup ~/haxelib
+          echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
+          echo ">>> Installing openfl 9.5.0..."
           haxelib install openfl 9.5.0 --always --quiet
+          echo ">>> Installing flixel 6.1.2..."
           haxelib install flixel 6.1.2 --always --quiet
+          echo ">>> Installing hxcpp 4.3.2..."
           haxelib install hxcpp 4.3.2 --always --quiet
+          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
           haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
+          echo ">>> Running lime setup..."
           yes | haxelib run lime setup || true
 
       - name: Build C++ target
-        run: haxelib run lime build mac -64
+        run: |
+          echo ">>> Building C++ mac target..."
+          haxelib run lime build mac -64
 
       - name: Validate build output
         run: |
+          echo ">>> Finding .app bundle..."
           APP_BUNDLE=$(find export -name "*.app" -path "*mac*" 2>/dev/null | head -1)
           echo "APP_BUNDLE=$APP_BUNDLE" >> "$GITHUB_ENV"
+          echo ">>> Validating build output in $APP_BUNDLE/Contents/MacOS..."
           ./ci/validate-build.sh "$APP_BUNDLE/Contents/MacOS" cpp
 
       - name: Record audio via FMOD wavwriter
         run: |
-          echo "Found app: $APP_BUNDLE"
-
+          echo ">>> Found app: $APP_BUNDLE"
           export FMOD_WAVWRITER=/tmp/audio-mac-cpp.wav
 
+          echo ">>> Running game with FMOD wavwriter..."
           "$APP_BUNDLE/Contents/MacOS/"* > /tmp/game-mac-cpp.log 2>&1 &
           GAME_PID=$!
+          echo ">>> Waiting for game (PID $GAME_PID) to finish (max 60s)..."
           for i in $(seq 60); do
             kill -0 $GAME_PID 2>/dev/null || break
             sleep 1
           done
+          echo ">>> Killing game process..."
           kill $GAME_PID 2>/dev/null || true
           wait $GAME_PID 2>/dev/null || true
 
@@ -468,10 +541,14 @@ jobs:
           fi
 
       - name: Validate audio
-        run: ./ci/validate-audio.sh /tmp/audio-mac-cpp.wav 10
+        run: |
+          echo ">>> Validating audio file..."
+          ./ci/validate-audio.sh /tmp/audio-mac-cpp.wav 10
 
       - name: Validate game log
-        run: ./ci/validate-game-log.sh /tmp/game-mac-cpp.log
+        run: |
+          echo ">>> Validating game log..."
+          ./ci/validate-game-log.sh /tmp/game-mac-cpp.log
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -494,14 +571,16 @@ jobs:
 
       - name: Download FMOD SDK
         run: |
+          echo ">>> Cloning fmod-sdk-cache at tag v1..."
           git clone --depth 1 --branch v1 \
             https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
             "$FMOD_SDK"
-          echo "FMOD SDK contents:"
+          echo ">>> FMOD SDK contents:"
           ls -R "$FMOD_SDK/mac/api/" | head -20
 
       - name: Setup Haxe via Homebrew
         run: |
+          echo ">>> Installing haxe, neko, hashlink, ffmpeg via homebrew..."
           brew install haxe neko hashlink ffmpeg
           echo "HAXE_STD_PATH=$(brew --prefix)/lib/haxe/std" >> $GITHUB_ENV
 
@@ -513,35 +592,47 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
+          echo ">>> Setting up haxelib..."
           mkdir -p ~/haxelib
           haxelib setup ~/haxelib
+          echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
+          echo ">>> Installing openfl 9.5.0..."
           haxelib install openfl 9.5.0 --always --quiet
+          echo ">>> Installing flixel 6.1.2..."
           haxelib install flixel 6.1.2 --always --quiet
+          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
           haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
+          echo ">>> Running lime setup..."
           yes | haxelib run lime setup || true
 
       - name: Build HashLink target
-        run: haxelib run lime build hl
+        run: |
+          echo ">>> Building HashLink target..."
+          haxelib run lime build hl
 
       - name: Validate build output
         run: |
+          echo ">>> Finding .app bundle..."
           APP_BUNDLE=$(find export/hl -name "*.app" 2>/dev/null | head -1)
           echo "APP_BUNDLE=$APP_BUNDLE" >> "$GITHUB_ENV"
+          echo ">>> Validating build output in $APP_BUNDLE/Contents/MacOS..."
           ./ci/validate-build.sh "$APP_BUNDLE/Contents/MacOS" hl
 
       - name: Record audio via FMOD wavwriter
         run: |
-          echo "Found app: $APP_BUNDLE"
-
+          echo ">>> Found app: $APP_BUNDLE"
           export FMOD_WAVWRITER=/tmp/audio-mac-hl.wav
 
+          echo ">>> Running game with FMOD wavwriter..."
           "$APP_BUNDLE/Contents/MacOS/"* > /tmp/game-mac-hl.log 2>&1 &
           GAME_PID=$!
+          echo ">>> Waiting for game (PID $GAME_PID) to finish (max 60s)..."
           for i in $(seq 60); do
             kill -0 $GAME_PID 2>/dev/null || break
             sleep 1
           done
+          echo ">>> Killing game process..."
           kill $GAME_PID 2>/dev/null || true
           wait $GAME_PID 2>/dev/null || true
 
@@ -557,10 +648,14 @@ jobs:
           fi
 
       - name: Validate audio
-        run: ./ci/validate-audio.sh /tmp/audio-mac-hl.wav 10
+        run: |
+          echo ">>> Validating audio file..."
+          ./ci/validate-audio.sh /tmp/audio-mac-hl.wav 10
 
       - name: Validate game log
-        run: ./ci/validate-game-log.sh /tmp/game-mac-hl.log
+        run: |
+          echo ">>> Validating game log..."
+          ./ci/validate-game-log.sh /tmp/game-mac-hl.log
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -586,6 +681,7 @@ jobs:
 
       - name: Download FMOD SDK
         run: |
+          echo ">>> Cloning fmod-sdk-cache at tag v1..."
           git clone --depth 1 --branch v1 \
             https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
             "$FMOD_SDK"
@@ -601,11 +697,13 @@ jobs:
 
       - name: Add ffmpeg to PATH
         run: |
+          echo ">>> Adding ffmpeg to PATH..."
           echo "C:\\ProgramData\\chocolatey\\bin" >> "$GITHUB_PATH"
           for d in /c/ProgramData/chocolatey/lib/ffmpeg/tools/*/bin; do
             [ -d "$d" ] && cygpath -w "$d" >> "$GITHUB_PATH"
           done
           export PATH="/c/ProgramData/chocolatey/bin:$PATH"
+          echo ">>> Checking ffprobe..."
           ffprobe -version | head -1 || echo "WARNING: ffprobe not found yet"
 
       - name: Cache haxelib
@@ -616,30 +714,43 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
+          echo ">>> Setting up haxelib..."
           haxelib setup ~/haxelib
+          echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
+          echo ">>> Installing openfl 9.5.0..."
           haxelib install openfl 9.5.0 --always --quiet
+          echo ">>> Installing flixel 6.1.2..."
           haxelib install flixel 6.1.2 --always --quiet
+          echo ">>> Installing hxcpp 4.3.2..."
           haxelib install hxcpp 4.3.2 --always --quiet
+          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
           haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
+          echo ">>> Running lime setup..."
           yes | haxelib run lime setup || true
 
       - name: Build C++ target
-        run: haxelib run lime build windows -64
+        run: |
+          echo ">>> Building C++ windows target..."
+          haxelib run lime build windows -64
 
       - name: Validate build output
         run: |
+          echo ">>> Finding bin directory..."
           BIN_DIR=$(find export -type d -name "bin" -path "*windows*" | head -1)
           echo "BIN_DIR=$BIN_DIR" >> "$GITHUB_ENV"
+          echo ">>> Validating build output in $BIN_DIR..."
           ./ci/validate-build.sh "$BIN_DIR" cpp
 
       - name: Record audio via FMOD wavwriter
         run: |
+          echo ">>> Finding game executable..."
           EXE=$(find "$BIN_DIR" -maxdepth 1 -name "*.exe" | head -1)
-          echo "Found exe: $EXE"
+          echo ">>> Found exe: $EXE"
 
           export FMOD_WAVWRITER="$GITHUB_WORKSPACE/audio-windows-cpp.wav"
 
+          echo ">>> Running game with FMOD wavwriter..."
           cd "$BIN_DIR"
           timeout 60 "./$(basename "$EXE")" > "$GITHUB_WORKSPACE/game-windows-cpp.log" 2>&1 || true
           cd -
@@ -678,10 +789,14 @@ jobs:
               print(f"WAV file not found: {wav}")
 
       - name: Validate audio
-        run: ./ci/validate-audio.sh "$GITHUB_WORKSPACE/audio-windows-cpp.wav" 10
+        run: |
+          echo ">>> Validating audio file..."
+          ./ci/validate-audio.sh "$GITHUB_WORKSPACE/audio-windows-cpp.wav" 10
 
       - name: Validate game log
-        run: ./ci/validate-game-log.sh "$GITHUB_WORKSPACE/game-windows-cpp.log"
+        run: |
+          echo ">>> Validating game log..."
+          ./ci/validate-game-log.sh "$GITHUB_WORKSPACE/game-windows-cpp.log"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -707,6 +822,7 @@ jobs:
 
       - name: Download FMOD SDK
         run: |
+          echo ">>> Cloning fmod-sdk-cache at tag v1..."
           git clone --depth 1 --branch v1 \
             https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
             "$FMOD_SDK"
@@ -722,11 +838,13 @@ jobs:
 
       - name: Add ffmpeg to PATH
         run: |
+          echo ">>> Adding ffmpeg to PATH..."
           echo "C:\\ProgramData\\chocolatey\\bin" >> "$GITHUB_PATH"
           for d in /c/ProgramData/chocolatey/lib/ffmpeg/tools/*/bin; do
             [ -d "$d" ] && cygpath -w "$d" >> "$GITHUB_PATH"
           done
           export PATH="/c/ProgramData/chocolatey/bin:$PATH"
+          echo ">>> Checking ffprobe..."
           ffprobe -version | head -1 || echo "WARNING: ffprobe not found yet"
 
       - name: Cache haxelib
@@ -737,40 +855,54 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
+          echo ">>> Setting up haxelib..."
           haxelib setup ~/haxelib
+          echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
+          echo ">>> Installing openfl 9.5.0..."
           haxelib install openfl 9.5.0 --always --quiet
+          echo ">>> Installing flixel 6.1.2..."
           haxelib install flixel 6.1.2 --always --quiet
+          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
           haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
+          echo ">>> Running lime setup..."
           yes | haxelib run lime setup || true
 
       - name: Build and install HashLink
         shell: powershell
         run: |
+          Write-Host ">>> Downloading HashLink 1.14..."
           $HL_URL = "https://github.com/HaxeFoundation/hashlink/releases/download/1.14/hashlink-1.14.0-win.zip"
           Invoke-WebRequest -Uri $HL_URL -OutFile "C:\hashlink.zip"
+          Write-Host ">>> Extracting HashLink..."
           Expand-Archive -Path "C:\hashlink.zip" -DestinationPath "C:\"
           $HL_DIR = Get-ChildItem "C:\" -Directory | Where-Object { $_.Name -like "hashlink*" } | Select-Object -First 1
           Rename-Item $HL_DIR.FullName "C:\hashlink"
+          Write-Host ">>> Adding HashLink to PATH..."
           echo "C:\hashlink" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "HASHLINK_DIR=C:\hashlink" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Build HashLink target
-        run: haxelib run lime build hl
+        run: |
+          echo ">>> Building HashLink target..."
+          haxelib run lime build hl
 
       - name: Validate build output
         run: |
           BIN_DIR="export/hl/bin"
           echo "BIN_DIR=$BIN_DIR" >> "$GITHUB_ENV"
+          echo ">>> Validating build output in $BIN_DIR..."
           ./ci/validate-build.sh "$BIN_DIR" hl
 
       - name: Record audio via FMOD wavwriter
         run: |
+          echo ">>> Finding game executable..."
           EXE=$(find "$BIN_DIR" -maxdepth 1 -name "*.exe" | head -1)
-          echo "Found exe: $EXE"
+          echo ">>> Found exe: $EXE"
 
           export FMOD_WAVWRITER="$GITHUB_WORKSPACE/audio-windows-hl.wav"
 
+          echo ">>> Running game with FMOD wavwriter..."
           cd "$BIN_DIR"
           timeout 60 "./$(basename "$EXE")" > "$GITHUB_WORKSPACE/game-windows-hl.log" 2>&1 || true
           cd -
@@ -809,10 +941,14 @@ jobs:
               print(f"WAV file not found: {wav}")
 
       - name: Validate audio
-        run: ./ci/validate-audio.sh "$GITHUB_WORKSPACE/audio-windows-hl.wav" 10
+        run: |
+          echo ">>> Validating audio file..."
+          ./ci/validate-audio.sh "$GITHUB_WORKSPACE/audio-windows-hl.wav" 10
 
       - name: Validate game log
-        run: ./ci/validate-game-log.sh "$GITHUB_WORKSPACE/game-windows-hl.log"
+        run: |
+          echo ">>> Validating game log..."
+          ./ci/validate-game-log.sh "$GITHUB_WORKSPACE/game-windows-hl.log"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
