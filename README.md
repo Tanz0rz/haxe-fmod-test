@@ -15,8 +15,21 @@ lime test hl
 
 - Adding haxefmod to a HaxeFlixel project ([Project.xml](Project.xml))
 - Playing background music and sound effects ([source/PlayState.hx](source/PlayState.hx))
+- Auto-generated `FmodSongs` and `FmodSFX` constants for type-safe event references ([source/FmodConstants.hx](source/FmodConstants.hx))
+- Global imports via [source/import.hx](source/import.hx) so `FmodManager`, `FmodSongs`, and `FmodSFX` are available everywhere
 - FMOD bank file layout (`assets/fmod/Desktop/`)
 - HTML5 FMOD preloader ([source/LoadFmodState.hx](source/LoadFmodState.hx))
+
+## FMOD Studio Helper Script
+
+haxe-fmod includes an [FMOD Studio script](https://github.com/Tanz0rz/haxe-fmod/tree/master/fmod-scripts) that auto-generates a `FmodConstants.hx` file from your FMOD Studio project. This gives you autocomplete for all your sound events:
+
+```haxe
+FmodManager.PlaySong(FmodSongs.MainLevel);        // instead of "event:/Music/MainLevel"
+FmodManager.PlaySoundOneShot(FmodSFX.Coin);        // instead of "event:/SFX/Coin"
+```
+
+Install by copying [`ExportHaxeConstants.js`](https://github.com/Tanz0rz/haxe-fmod/blob/master/fmod-scripts/ExportHaxeConstants.js) into your FMOD Studio scripts folder, then use `Ctrl+B` in FMOD Studio to regenerate constants and rebuild banks in one step. See the [fmod-scripts README](https://github.com/Tanz0rz/haxe-fmod/tree/master/fmod-scripts) for full setup instructions.
 
 ## Adding haxefmod to Your Own Game
 
