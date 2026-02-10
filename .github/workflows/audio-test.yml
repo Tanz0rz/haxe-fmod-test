@@ -767,7 +767,7 @@ jobs:
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cd "%HAXEFMOD_DIR_WIN%\native\hlaxe"
+          cd /d "%HAXEFMOD_DIR_WIN%\native\hlaxe"
           cl /LD /O2 /DWIN32 hlaxe_fmod.c ^
             /I"C:\hashlink\include" ^
             /I"%HAXEFMOD_DIR_WIN%\lib\Windows\api\core\inc" ^
