@@ -754,20 +754,27 @@ jobs:
           Get-ChildItem "C:\hashlink" | Format-Table Name, Length
           try { & "C:\hashlink\hl.exe" --version 2>&1 } catch { Write-Host "hl --version not supported" }
 
+      - name: Resolve haxefmod path
+        run: |
+          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
+          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR"
+          # Convert to Windows path for cmd step
+          HAXEFMOD_DIR_WIN=$(cygpath -w "$HAXEFMOD_DIR")
+          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
+          echo "HAXEFMOD_DIR_WIN=$HAXEFMOD_DIR_WIN" >> "$GITHUB_ENV"
+
       - name: Compile hlaxe_fmod.hdll
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          for /f "delims=" %%i in ('haxelib path haxefmod') do set HAXEFMOD_DIR=%%i& goto :found
-          :found
-          cd %HAXEFMOD_DIR%\native\hlaxe
+          cd "%HAXEFMOD_DIR_WIN%\native\hlaxe"
           cl /LD /O2 /DWIN32 hlaxe_fmod.c ^
             /I"C:\hashlink\include" ^
-            /I"%HAXEFMOD_DIR%\lib\Windows\api\core\inc" ^
-            /I"%HAXEFMOD_DIR%\lib\Windows\api\studio\inc" ^
+            /I"%HAXEFMOD_DIR_WIN%\lib\Windows\api\core\inc" ^
+            /I"%HAXEFMOD_DIR_WIN%\lib\Windows\api\studio\inc" ^
             /link ^
-            /LIBPATH:"%HAXEFMOD_DIR%\lib\Windows\api\core\lib\x64" ^
-            /LIBPATH:"%HAXEFMOD_DIR%\lib\Windows\api\studio\lib\x64" ^
+            /LIBPATH:"%HAXEFMOD_DIR_WIN%\lib\Windows\api\core\lib\x64" ^
+            /LIBPATH:"%HAXEFMOD_DIR_WIN%\lib\Windows\api\studio\lib\x64" ^
             fmod_vc.lib fmodstudio_vc.lib ^
             /LIBPATH:"C:\hashlink" libhl.lib ^
             /OUT:hlaxe_fmod.hdll
