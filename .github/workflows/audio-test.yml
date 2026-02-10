@@ -53,10 +53,7 @@ jobs:
           sudo apt-get install -y pulseaudio libasound2-plugins xvfb ffmpeg patchelf libgl1-mesa-dev
 
       - name: Build C++ target
-        run: |
-          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
-          "$HAXEFMOD_DIR/scripts/build-linux.sh" .
+        run: haxelib run lime build linux -64
 
       - name: Patch FMOD libraries
         run: |
@@ -406,10 +403,7 @@ jobs:
           yes | haxelib run lime setup || true
 
       - name: Build C++ target
-        run: |
-          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
-          "$HAXEFMOD_DIR/scripts/build-mac.sh" .
+        run: haxelib run lime build mac -64
 
       - name: Validate build output
         run: |
