@@ -17,7 +17,7 @@ on:
 
 env:
   HAXE_VERSION: 4.3.6
-  HAXEFMOD_BRANCH: hashlink-refactor-byol
+  HAXEFMOD_BRANCH: hashlink-refactor
   HAXEFMOD_REPO: https://github.com/Tanz0rz/haxe-fmod.git
   FMOD_SDK: ${{ github.workspace }}/fmod-sdk
 
