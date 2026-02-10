@@ -44,7 +44,7 @@ jobs:
           haxelib install openfl 9.5.0 --always --quiet
           haxelib install flixel 6.1.2 --always --quiet
           haxelib install hxcpp 4.3.2 --always --quiet
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
           yes | haxelib run lime setup || true
 
       - name: Install system dependencies
@@ -164,7 +164,7 @@ jobs:
           haxelib install lime 8.3.0 --always --quiet
           haxelib install openfl 9.5.0 --always --quiet
           haxelib install flixel 6.1.2 --always --quiet
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
           yes | haxelib run lime setup || true
 
       - name: Install system dependencies
@@ -290,7 +290,7 @@ jobs:
           haxelib install lime 8.3.0 --always --quiet
           haxelib install openfl 9.5.0 --always --quiet
           haxelib install flixel 6.1.2 --always --quiet
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
           yes | haxelib run lime setup || true
 
       - name: Install system dependencies
@@ -402,7 +402,7 @@ jobs:
           haxelib install openfl 9.5.0 --always --quiet
           haxelib install flixel 6.1.2 --always --quiet
           haxelib install hxcpp 4.3.2 --always --quiet
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
           yes | haxelib run lime setup || true
 
       - name: Build C++ target
@@ -486,7 +486,7 @@ jobs:
           haxelib install lime 8.3.0 --always --quiet
           haxelib install openfl 9.5.0 --always --quiet
           haxelib install flixel 6.1.2 --always --quiet
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
           yes | haxelib run lime setup || true
 
       - name: Build HashLink target
@@ -583,7 +583,7 @@ jobs:
           haxelib install openfl 9.5.0 --always --quiet
           haxelib install flixel 6.1.2 --always --quiet
           haxelib install hxcpp 4.3.2 --always --quiet
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
           yes | haxelib run lime setup || true
 
       - name: Build C++ target
@@ -698,7 +698,7 @@ jobs:
           haxelib install lime 8.3.0 --always --quiet
           haxelib install openfl 9.5.0 --always --quiet
           haxelib install flixel 6.1.2 --always --quiet
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
+          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
           yes | haxelib run lime setup || true
 
       - name: Build and install HashLink
