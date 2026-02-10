@@ -20,7 +20,6 @@ env:
   HAXEFMOD_BRANCH: hashlink-refactor-byol
   HAXEFMOD_REPO: https://github.com/Tanz0rz/haxe-fmod.git
   FMOD_SDK: ${{ github.workspace }}/fmod-sdk
-  HAS_SOLO_BUILD: ${{ contains(github.event.head_commit.message, '[linux-cpp]') || contains(github.event.head_commit.message, '[linux-hl]') || contains(github.event.head_commit.message, '[linux-html5]') || contains(github.event.head_commit.message, '[mac-cpp]') || contains(github.event.head_commit.message, '[mac-hl]') || contains(github.event.head_commit.message, '[windows-cpp]') || contains(github.event.head_commit.message, '[windows-hl]') }}
 
 jobs:
   # ===========================================================================
@@ -28,7 +27,7 @@ jobs:
   # ===========================================================================
   linux-cpp:
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (env.HAS_SOLO_BUILD != 'true' || contains(github.event.head_commit.message, '[linux-cpp]')) }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (contains(github.event.head_commit.message, '[linux-cpp]') || (!contains(github.event.head_commit.message, '[linux-cpp]') && !contains(github.event.head_commit.message, '[linux-hl]') && !contains(github.event.head_commit.message, '[linux-html5]') && !contains(github.event.head_commit.message, '[mac-cpp]') && !contains(github.event.head_commit.message, '[mac-hl]') && !contains(github.event.head_commit.message, '[windows-cpp]') && !contains(github.event.head_commit.message, '[windows-hl]'))) }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -171,7 +170,7 @@ jobs:
   # ===========================================================================
   linux-hl:
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (env.HAS_SOLO_BUILD != 'true' || contains(github.event.head_commit.message, '[linux-hl]')) }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (contains(github.event.head_commit.message, '[linux-hl]') || (!contains(github.event.head_commit.message, '[linux-cpp]') && !contains(github.event.head_commit.message, '[linux-hl]') && !contains(github.event.head_commit.message, '[linux-html5]') && !contains(github.event.head_commit.message, '[mac-cpp]') && !contains(github.event.head_commit.message, '[mac-hl]') && !contains(github.event.head_commit.message, '[windows-cpp]') && !contains(github.event.head_commit.message, '[windows-hl]'))) }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -334,7 +333,7 @@ jobs:
   # ===========================================================================
   linux-html5:
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (env.HAS_SOLO_BUILD != 'true' || contains(github.event.head_commit.message, '[linux-html5]')) }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (contains(github.event.head_commit.message, '[linux-html5]') || (!contains(github.event.head_commit.message, '[linux-cpp]') && !contains(github.event.head_commit.message, '[linux-hl]') && !contains(github.event.head_commit.message, '[linux-html5]') && !contains(github.event.head_commit.message, '[mac-cpp]') && !contains(github.event.head_commit.message, '[mac-hl]') && !contains(github.event.head_commit.message, '[windows-cpp]') && !contains(github.event.head_commit.message, '[windows-hl]'))) }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -466,7 +465,7 @@ jobs:
   # ===========================================================================
   mac-cpp:
     runs-on: macos-14
-    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (env.HAS_SOLO_BUILD != 'true' || contains(github.event.head_commit.message, '[mac-cpp]')) }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (contains(github.event.head_commit.message, '[mac-cpp]') || (!contains(github.event.head_commit.message, '[linux-cpp]') && !contains(github.event.head_commit.message, '[linux-hl]') && !contains(github.event.head_commit.message, '[linux-html5]') && !contains(github.event.head_commit.message, '[mac-cpp]') && !contains(github.event.head_commit.message, '[mac-hl]') && !contains(github.event.head_commit.message, '[windows-cpp]') && !contains(github.event.head_commit.message, '[windows-hl]'))) }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -574,7 +573,7 @@ jobs:
   # ===========================================================================
   mac-hl:
     runs-on: macos-14
-    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (env.HAS_SOLO_BUILD != 'true' || contains(github.event.head_commit.message, '[mac-hl]')) }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (contains(github.event.head_commit.message, '[mac-hl]') || (!contains(github.event.head_commit.message, '[linux-cpp]') && !contains(github.event.head_commit.message, '[linux-hl]') && !contains(github.event.head_commit.message, '[linux-html5]') && !contains(github.event.head_commit.message, '[mac-cpp]') && !contains(github.event.head_commit.message, '[mac-hl]') && !contains(github.event.head_commit.message, '[windows-cpp]') && !contains(github.event.head_commit.message, '[windows-hl]'))) }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -682,7 +681,7 @@ jobs:
   # ===========================================================================
   windows-cpp:
     runs-on: windows-latest
-    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (env.HAS_SOLO_BUILD != 'true' || contains(github.event.head_commit.message, '[windows-cpp]')) }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (contains(github.event.head_commit.message, '[windows-cpp]') || (!contains(github.event.head_commit.message, '[linux-cpp]') && !contains(github.event.head_commit.message, '[linux-hl]') && !contains(github.event.head_commit.message, '[linux-html5]') && !contains(github.event.head_commit.message, '[mac-cpp]') && !contains(github.event.head_commit.message, '[mac-hl]') && !contains(github.event.head_commit.message, '[windows-cpp]') && !contains(github.event.head_commit.message, '[windows-hl]'))) }}
     timeout-minutes: 30
     defaults:
       run:
@@ -824,7 +823,7 @@ jobs:
   # ===========================================================================
   windows-hl:
     runs-on: windows-latest
-    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (env.HAS_SOLO_BUILD != 'true' || contains(github.event.head_commit.message, '[windows-hl]')) }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip-build]') && (contains(github.event.head_commit.message, '[windows-hl]') || (!contains(github.event.head_commit.message, '[linux-cpp]') && !contains(github.event.head_commit.message, '[linux-hl]') && !contains(github.event.head_commit.message, '[linux-html5]') && !contains(github.event.head_commit.message, '[mac-cpp]') && !contains(github.event.head_commit.message, '[mac-hl]') && !contains(github.event.head_commit.message, '[windows-cpp]') && !contains(github.event.head_commit.message, '[windows-hl]'))) }}
     timeout-minutes: 30
     defaults:
       run:
