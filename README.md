@@ -18,7 +18,7 @@ Download [FMOD Studio](https://fmod.com/download) (version 2.03.x) to create and
 ### 2. Install haxefmod
 
 ```bash
-haxelib git haxefmod https://github.com/Tanz0rz/haxe-fmod.git hashlink-refactor-windows
+haxelib git haxefmod https://github.com/Tanz0rz/haxe-fmod.git hashlink-refactor-build-cleanup
 ```
 
 Then install the required companion libraries:
@@ -76,7 +76,7 @@ See all available functions in [FmodManager.hx](https://github.com/Tanz0rz/haxe-
 
 ## Building Your Game
 
-haxefmod includes build scripts that handle compiling native bindings, copying FMOD libraries, and packaging everything into the output directory. Use `./build.sh <target>` if your project has the wrapper script (like this repo), or call the build scripts directly.
+All targets work with plain `lime build` commands. haxefmod's `include.xml` automatically handles copying FMOD libraries and native bindings to the correct output directory.
 
 ### HTML5
 
@@ -86,74 +86,39 @@ haxelib run lime build html5
 
 HTML5 builds require a startup scene to load FMOD before the game starts. See [source/LoadFmodState.hx](source/LoadFmodState.hx) and [source/Main.hx](source/Main.hx) in this repo for an example.
 
-### Windows C++
+### Windows
 
 ```bash
-haxelib run lime build windows -64
+haxelib run lime build windows -64     # C++
+haxelib run lime build hl              # HashLink
 ```
 
-FMOD DLLs are automatically copied into the output by the build system.
-
-### Windows HashLink
+### Linux
 
 ```bash
-HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-"$HAXEFMOD_DIR/scripts/build-hl.sh" .
+haxelib run lime build linux -64       # C++
+haxelib run lime build hl              # HashLink
 ```
 
-The build script compiles `hlaxe_fmod.hdll`, builds the HL target, and copies all FMOD DLLs to the output.
-
-### Linux C++
+On Linux C++, the build creates a `run.sh` wrapper that sets `LD_LIBRARY_PATH`:
 
 ```bash
-HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-"$HAXEFMOD_DIR/scripts/build-linux.sh" .
-
-# Run
-./export/linux/bin/run.sh
+./export/linux64/bin/run.sh
 ```
 
-The build script copies FMOD `.so` files and creates `run.sh` which sets `LD_LIBRARY_PATH` automatically.
-
-### Linux HashLink
-
-Requires [HashLink](https://hashlink.haxe.org/) installed on your system.
+### macOS
 
 ```bash
-HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-"$HAXEFMOD_DIR/scripts/build-hl-linux.sh" .
-
-# Run
-./export/hl/bin/run.sh
+haxelib run lime build mac -64         # C++
+haxelib run lime build hl              # HashLink
 ```
 
-The build script compiles `hlaxe_fmod.hdll`, builds the HL target, copies FMOD libraries, creates `.so` symlinks, and generates `run.sh`.
-
-### macOS C++ (ARM64 only)
+Run with:
 
 ```bash
-HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-"$HAXEFMOD_DIR/scripts/build-mac.sh" .
-
-# Run
-open export/macos/bin/*.app
+open export/macos/bin/*.app            # C++
+open export/hl/bin/*.app               # HashLink
 ```
-
-The build script copies dylibs into the `.app` bundle automatically.
-
-### macOS HashLink (ARM64 only)
-
-Requires Homebrew: `brew install haxe neko hashlink`
-
-```bash
-HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-"$HAXEFMOD_DIR/scripts/build-hl-mac.sh" .
-
-# Run
-open export/hl/bin/*.app
-```
-
-The build script compiles `hlaxe_fmod.hdll`, builds the HL target, and copies all FMOD dylibs into the `.app` bundle.
 
 ## Running This Test Project Locally
 

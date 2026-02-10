@@ -23,24 +23,26 @@ ci/                  - CI validation scripts
 
 ## How This Repo Relates to haxe-fmod
 
-This repo installs haxefmod via `haxelib git` from a configurable branch/repo. The CI workflow pulls build scripts from the installed haxe-fmod library at runtime:
+This repo installs haxefmod via `haxelib git` from a configurable branch/repo. All builds use plain `lime build <target>` commands — haxefmod's `include.xml` handles everything automatically via `<templatePath>` (HL), `<postbuild>` (C++ Mac/Linux), and `<dependency>` (C++ Windows).
 - `HAXEFMOD_BRANCH` env var in the CI workflow controls which haxe-fmod branch to use
-- `setup.sh` defaults to `hashlink-refactor-windows` branch (overridable via env var)
-- Build scripts are resolved at build time: `$(haxelib path haxefmod | head -1)/scripts/...`
+- `setup.sh` defaults to `hashlink-refactor-build-cleanup` branch (overridable via env var)
+- **IMPORTANT**: Use `haxelib git ... --always` to ensure cached repos are updated in CI
 
 ## CI Workflow
 
 `.github/workflows/audio-test.yml` — 7 parallel jobs:
 
-| Job | Runner | Build Method | Audio Capture |
-|-----|--------|-------------|---------------|
-| linux-cpp | ubuntu-latest | `build-linux.sh` | PulseAudio null sink + ffmpeg |
-| linux-hl | ubuntu-latest | `build-hl-linux.sh` | PulseAudio null sink + ffmpeg |
+| Job | Runner | Build Command | Audio Capture |
+|-----|--------|--------------|---------------|
+| linux-cpp | ubuntu-latest | `lime build linux -64` | PulseAudio null sink + ffmpeg |
+| linux-hl | ubuntu-latest | `lime build hl` | PulseAudio null sink + ffmpeg |
 | linux-html5 | ubuntu-latest | `lime build html5` | PulseAudio + Chromium |
-| mac-cpp | macos-14 | `build-mac.sh` | FMOD_WAVWRITER env var |
-| mac-hl | macos-14 | `build-hl-mac.sh` | FMOD_WAVWRITER env var |
-| windows-cpp | windows-latest | `lime build windows` | FMOD_WAVWRITER env var |
-| windows-hl | windows-latest | inline MSVC + lime | FMOD_WAVWRITER env var |
+| mac-cpp | macos-14 | `lime build mac -64` | FMOD_WAVWRITER env var |
+| mac-hl | macos-14 | `lime build hl` | FMOD_WAVWRITER env var |
+| windows-cpp | windows-latest | `lime build windows -64` | FMOD_WAVWRITER env var |
+| windows-hl | windows-latest | `lime build hl` | FMOD_WAVWRITER env var |
+
+All jobs use plain `lime build` commands. No build scripts needed — haxefmod's include.xml handles FMOD lib copying automatically.
 
 CI has `paths-ignore` for `*.md` and `.gitignore` — doc-only pushes skip builds.
 
@@ -59,9 +61,7 @@ CI has `paths-ignore` for `*.md` and `.gitignore` — doc-only pushes skip build
 - **macOS Haxe setup** — `krdlab/setup-haxe` fails on macos-14 ARM64, use `brew install haxe neko`
 - **macOS haxelib** — Must `mkdir -p ~/haxelib` before `haxelib setup ~/haxelib`
 - **Windows FMOD WAVWRITER** — Writes 0 channels in WAV header on Sys.exit(); Python step patches bytes 22-23, 28-31, 32-33
-- **Windows cmd drive switching** — `cd` doesn't change drives, must use `cd /d`
-- **Windows haxelib path** — Resolve in bash step, convert with `cygpath -w` for cmd steps
-- **Windows HL hdll compilation** — Uses MSVC `cl.exe` via `vcvars64.bat`, not gcc
+- **`haxelib git --always`** — Without `--always`, haxelib prompts "Reset changes?" defaulting to 'n' in CI, preventing repo updates
 
 ## Commit Rules
 
