@@ -81,26 +81,18 @@ All targets work with standard `lime` commands. FMOD libraries and native bindin
 Only 64-bit builds are supported. Lime defaults to 64-bit on 64-bit hosts, so no `-64` flag is needed.
 
 ```bash
-lime build windows    # Windows C++
-lime build mac        # macOS C++
-lime build linux      # Linux C++
-lime build hl         # HashLink (all platforms)
-lime build html5      # HTML5
+lime test windows    # Windows C++
+lime test mac        # macOS C++
+lime test linux      # Linux C++
+lime test hl         # HashLink (all platforms)
+lime test html5      # HTML5
 ```
 
-Use `lime test <target>` to build and run in one step.
+`lime test` builds and runs in one step. Use `lime build` if you only want to compile.
 
 ### HTML5
 
 HTML5 builds require a startup scene to load FMOD before the game starts. See [source/LoadFmodState.hx](source/LoadFmodState.hx) and [source/Main.hx](source/Main.hx) in this repo for an example.
-
-### Linux C++
-
-The build creates a `run.sh` wrapper that sets `LD_LIBRARY_PATH`:
-
-```bash
-./export/linux/bin/run.sh
-```
 
 ## Running This Test Project Locally
 
