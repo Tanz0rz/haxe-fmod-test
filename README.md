@@ -76,6 +76,8 @@ See all available functions in [FmodManager.hx](https://github.com/Tanz0rz/haxe-
 
 ## Building Your Game
 
+haxefmod includes build scripts that handle compiling native bindings, copying FMOD libraries, and packaging everything into the output directory. Use `./build.sh <target>` if your project has the wrapper script (like this repo), or call the build scripts directly.
+
 ### HTML5
 
 ```bash
@@ -95,28 +97,15 @@ FMOD DLLs are automatically copied into the output by the build system.
 ### Windows HashLink
 
 ```bash
-# Build the game
-haxelib run lime build hl
-
-# Copy FMOD DLLs and hlaxe_fmod.hdll to the output directory
-HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-BIN_DIR="export/hl/bin"
-cp "$HAXEFMOD_DIR/lib/Windows/api/core/lib/x64/fmod.dll" "$BIN_DIR/"
-cp "$HAXEFMOD_DIR/lib/Windows/api/studio/lib/x64/fmodstudio.dll" "$BIN_DIR/"
-cp "$HAXEFMOD_DIR/native/hlaxe/hlaxe_fmod.hdll" "$BIN_DIR/"
-```
-
-Or use the provided build script:
-
-```bash
 HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
 "$HAXEFMOD_DIR/scripts/build-hl.sh" .
 ```
 
+The build script compiles `hlaxe_fmod.hdll`, builds the HL target, and copies all FMOD DLLs to the output.
+
 ### Linux C++
 
 ```bash
-# Use the build script (copies FMOD .so files and creates run.sh)
 HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
 "$HAXEFMOD_DIR/scripts/build-linux.sh" .
 
@@ -124,77 +113,47 @@ HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
 ./export/linux/bin/run.sh
 ```
 
-The `run.sh` script sets `LD_LIBRARY_PATH` so the FMOD shared libraries are found at runtime.
+The build script copies FMOD `.so` files and creates `run.sh` which sets `LD_LIBRARY_PATH` automatically.
 
 ### Linux HashLink
 
-Requires building HashLink from source on Ubuntu 24.04 (the 1.15 release has mbedtls compatibility issues):
+Requires [HashLink](https://hashlink.haxe.org/) installed on your system.
 
 ```bash
-# Build HashLink from master
-git clone --depth 1 https://github.com/HaxeFoundation/hashlink.git /tmp/hashlink-src
-cd /tmp/hashlink-src && make -j$(nproc) && sudo make install && sudo ldconfig
-
-# Compile hlaxe_fmod.hdll
 HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-cd "$HAXEFMOD_DIR/native/hlaxe" && make
-
-# Build and package
-cd /path/to/your/project
-"$HAXEFMOD_DIR/scripts/build-hl.sh" .
+"$HAXEFMOD_DIR/scripts/build-hl-linux.sh" .
 
 # Run
 ./export/hl/bin/run.sh
 ```
 
+The build script compiles `hlaxe_fmod.hdll`, builds the HL target, copies FMOD libraries, creates `.so` symlinks, and generates `run.sh`.
+
 ### macOS C++ (ARM64 only)
 
 ```bash
-# Use the build script (copies dylibs into .app bundle)
 HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
 "$HAXEFMOD_DIR/scripts/build-mac.sh" .
 
 # Run
-open export/macos/bin/YourGame.app
+open export/macos/bin/*.app
 ```
+
+The build script copies dylibs into the `.app` bundle automatically.
 
 ### macOS HashLink (ARM64 only)
 
-Requires Homebrew with `haxe`, `neko`, and `hashlink` installed:
-
-```bash
-brew install haxe neko hashlink
-```
-
-Then build:
+Requires Homebrew: `brew install haxe neko hashlink`
 
 ```bash
 HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-
-# Compile hlaxe_fmod.hdll
-cd "$HAXEFMOD_DIR/native/hlaxe"
-cc -dynamiclib -arch x86_64 -O2 -o hlaxe_fmod.hdll hlaxe_fmod.c \
-    -I"$(brew --prefix hashlink)/include" \
-    -I"$HAXEFMOD_DIR/lib/Mac/api/core/inc" \
-    -I"$HAXEFMOD_DIR/lib/Mac/api/studio/inc" \
-    -L"$HAXEFMOD_DIR/lib/Mac/api/core/lib" \
-    -L"$HAXEFMOD_DIR/lib/Mac/api/studio/inc/lib" \
-    -lfmod -lfmodstudio \
-    -install_name @executable_path/hlaxe_fmod.hdll
-
-# Build the game
-cd /path/to/your/project
-haxelib run lime build hl
-
-# Copy FMOD files into the .app bundle
-APP_BUNDLE=$(find export/hl -name "*.app" | head -1)
-cp "$HAXEFMOD_DIR/native/hlaxe/hlaxe_fmod.hdll" "$APP_BUNDLE/Contents/MacOS/"
-cp "$HAXEFMOD_DIR/lib/Mac/api/core/lib/libfmod.dylib" "$APP_BUNDLE/Contents/MacOS/"
-cp "$HAXEFMOD_DIR/lib/Mac/api/studio/inc/lib/libfmodstudio.dylib" "$APP_BUNDLE/Contents/MacOS/"
+"$HAXEFMOD_DIR/scripts/build-hl-mac.sh" .
 
 # Run
-open "$APP_BUNDLE"
+open export/hl/bin/*.app
 ```
+
+The build script compiles `hlaxe_fmod.hdll`, builds the HL target, and copies all FMOD dylibs into the `.app` bundle.
 
 ## Running This Test Project Locally
 
@@ -202,9 +161,10 @@ open "$APP_BUNDLE"
 git clone https://github.com/Tanz0rz/haxe-fmod-test.git
 cd haxe-fmod-test
 ./setup.sh
+./build.sh <target>
 ```
 
-Then build for your platform using the commands above.
+Available targets: `html5`, `linux`, `mac`, `hl`, `hl-linux`, `hl-mac`, `windows`
 
 ## CI
 

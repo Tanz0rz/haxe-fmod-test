@@ -2,12 +2,18 @@ name: Build and Audio Test
 
 on:
   push:
+    paths-ignore:
+      - '*.md'
+      - '.gitignore'
   pull_request:
+    paths-ignore:
+      - '*.md'
+      - '.gitignore'
   workflow_dispatch:
 
 env:
   HAXE_VERSION: 4.3.6
-  HAXEFMOD_BRANCH: hashlink-refactor-windows
+  HAXEFMOD_BRANCH: hashlink-refactor-build-cleanup
   HAXEFMOD_REPO: https://github.com/Tanz0rz/haxe-fmod.git
 
 jobs:
@@ -181,23 +187,11 @@ jobs:
           sudo ldconfig
           hl --version || echo "HashLink installed"
 
-      - name: Compile hlaxe_fmod.hdll
+      - name: Build HashLink target
         run: |
           HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
           echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
-          cd "$HAXEFMOD_DIR/native/hlaxe"
-          make clean
-          make
-
-      - name: Build HashLink target
-        run: |
-          "$HAXEFMOD_DIR/scripts/build-hl.sh" .
-
-      - name: Patch FMOD libraries
-        run: |
-          BIN_DIR="export/hl/bin"
-          patchelf --clear-execstack "$BIN_DIR"/libfmod.so* || true
-          patchelf --clear-execstack "$BIN_DIR"/libfmodstudio.so* || true
+          "$HAXEFMOD_DIR/scripts/build-hl-linux.sh" .
 
       - name: Validate build output
         run: |
@@ -228,12 +222,6 @@ jobs:
           ALSA_EOF
 
           BIN_DIR="export/hl/bin"
-
-          # Ensure .so symlinks exist
-          cd "$BIN_DIR"
-          ln -sf libfmod.so.11 libfmod.so 2>/dev/null || true
-          ln -sf libfmodstudio.so.11 libfmodstudio.so 2>/dev/null || true
-          cd -
 
           # Start recording from the virtual sink's monitor
           ffmpeg -f pulse -i virtual_speaker.monitor -t 30 -y /tmp/audio-linux-hl.wav &
@@ -500,40 +488,16 @@ jobs:
           haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH"
           yes | haxelib run lime setup || true
 
-      - name: Compile hlaxe_fmod.hdll
+      - name: Build HashLink target
         run: |
           HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
           echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
-          FMOD_CORE="$HAXEFMOD_DIR/lib/Mac/api/core"
-          FMOD_STUDIO="$HAXEFMOD_DIR/lib/Mac/api/studio"
-          HL_PREFIX="$(brew --prefix hashlink)"
-
-          cd "$HAXEFMOD_DIR/native/hlaxe"
-          cc -dynamiclib -arch x86_64 -O2 -o hlaxe_fmod.hdll hlaxe_fmod.c \
-            -I"$HL_PREFIX/include" \
-            -I"$FMOD_CORE/inc" \
-            -I"$FMOD_STUDIO/inc" \
-            -L"$FMOD_CORE/lib" \
-            -L"$FMOD_STUDIO/inc/lib" \
-            -lfmod -lfmodstudio \
-            -install_name @executable_path/hlaxe_fmod.hdll
-
-      - name: Build HashLink target
-        run: |
-          haxelib run lime build hl
-
-      - name: Copy FMOD dependencies
-        run: |
-          APP_BUNDLE=$(find export/hl -name "*.app" 2>/dev/null | head -1)
-          echo "APP_BUNDLE=$APP_BUNDLE" >> "$GITHUB_ENV"
-          APP_MACOS="$APP_BUNDLE/Contents/MacOS"
-
-          cp "$HAXEFMOD_DIR/native/hlaxe/hlaxe_fmod.hdll" "$APP_MACOS/"
-          cp "$HAXEFMOD_DIR/lib/Mac/api/core/lib/libfmod.dylib" "$APP_MACOS/"
-          cp "$HAXEFMOD_DIR/lib/Mac/api/studio/inc/lib/libfmodstudio.dylib" "$APP_MACOS/"
+          "$HAXEFMOD_DIR/scripts/build-hl-mac.sh" .
 
       - name: Validate build output
         run: |
+          APP_BUNDLE=$(find export/hl -name "*.app" 2>/dev/null | head -1)
+          echo "APP_BUNDLE=$APP_BUNDLE" >> "$GITHUB_ENV"
           ./ci/validate-build.sh "$APP_BUNDLE/Contents/MacOS" hl
 
       - name: Record audio via FMOD wavwriter
