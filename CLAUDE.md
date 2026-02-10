@@ -24,7 +24,7 @@ ci/                  - CI validation scripts
 
 This repo installs haxefmod via `haxelib git` from a configurable branch/repo. All builds use plain `lime build <target>` commands — haxefmod's `include.xml` handles everything automatically via `<templatePath>` (HL), `<postbuild>` (C++ Mac/Linux), and `<dependency>` (C++ Windows).
 - `HAXEFMOD_BRANCH` env var in the CI workflow controls which haxe-fmod branch to use
-- `setup.sh` defaults to `hashlink-refactor-build-cleanup` branch (overridable via env var)
+- `setup.sh` defaults to `hashlink-refactor` branch (overridable via env var)
 - **IMPORTANT**: Use `haxelib git ... --always` to ensure cached repos are updated in CI
 
 ## Supported Platforms
