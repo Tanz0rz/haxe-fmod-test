@@ -8,7 +8,6 @@ Integration test project for [haxe-fmod](https://github.com/Tanz0rz/haxe-fmod). 
 
 **Haxe toolchain:**
 - [Haxe 4.3+](https://haxe.org/download/)
-- [Neko](https://nekovm.org/download/) (required by haxelib)
 - [HashLink](https://hashlink.haxe.org/) (only if building HashLink targets)
 
 **FMOD Studio:**
