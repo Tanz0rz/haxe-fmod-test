@@ -76,48 +76,30 @@ See all available functions in [FmodManager.hx](https://github.com/Tanz0rz/haxe-
 
 ## Building Your Game
 
-All targets work with plain `lime build` commands. haxefmod's `include.xml` automatically handles copying FMOD libraries and native bindings to the correct output directory.
+All targets work with standard `lime` commands. FMOD libraries and native bindings are automatically copied to the output directory — no extra steps needed.
+
+Only 64-bit builds are supported. Lime defaults to 64-bit on 64-bit hosts, so no `-64` flag is needed.
+
+```bash
+lime build windows    # Windows C++
+lime build mac        # macOS C++
+lime build linux      # Linux C++
+lime build hl         # HashLink (all platforms)
+lime build html5      # HTML5
+```
+
+Use `lime test <target>` to build and run in one step.
 
 ### HTML5
 
-```bash
-haxelib run lime build html5
-```
-
 HTML5 builds require a startup scene to load FMOD before the game starts. See [source/LoadFmodState.hx](source/LoadFmodState.hx) and [source/Main.hx](source/Main.hx) in this repo for an example.
 
-### Windows
+### Linux C++
+
+The build creates a `run.sh` wrapper that sets `LD_LIBRARY_PATH`:
 
 ```bash
-haxelib run lime build windows -64     # C++
-haxelib run lime build hl              # HashLink
-```
-
-### Linux
-
-```bash
-haxelib run lime build linux -64       # C++
-haxelib run lime build hl              # HashLink
-```
-
-On Linux C++, the build creates a `run.sh` wrapper that sets `LD_LIBRARY_PATH`:
-
-```bash
-./export/linux64/bin/run.sh
-```
-
-### macOS
-
-```bash
-haxelib run lime build mac -64         # C++
-haxelib run lime build hl              # HashLink
-```
-
-Run with:
-
-```bash
-open export/macos/bin/*.app            # C++
-open export/hl/bin/*.app               # HashLink
+./export/linux/bin/run.sh
 ```
 
 ## Running This Test Project Locally
@@ -129,7 +111,7 @@ cd haxe-fmod-test
 ./build.sh <target>
 ```
 
-Available targets: `html5`, `linux`, `mac`, `hl`, `hl-linux`, `hl-mac`, `windows`
+Available targets: `html5`, `linux`, `mac`, `hl`, `windows`
 
 ## CI
 
