@@ -188,16 +188,17 @@ jobs:
           hl --version || echo "HashLink installed"
 
       - name: Build HashLink target
-        run: |
-          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
-          "$HAXEFMOD_DIR/scripts/build-hl-linux.sh" .
+        run: haxelib run lime build hl
 
-      - name: Validate build output
+      - name: Patch FMOD libraries
         run: |
           BIN_DIR="export/hl/bin"
           echo "BIN_DIR=$BIN_DIR" >> "$GITHUB_ENV"
-          ./ci/validate-build.sh "$BIN_DIR" hl
+          patchelf --clear-execstack "$BIN_DIR"/libfmod.so* || true
+          patchelf --clear-execstack "$BIN_DIR"/libfmodstudio.so* || true
+
+      - name: Validate build output
+        run: ./ci/validate-build.sh "$BIN_DIR" hl
 
       - name: Record audio
         run: |
@@ -229,9 +230,9 @@ jobs:
 
           # Run the game with library paths set
           cd "$BIN_DIR"
-          chmod +x run.sh
+          EXE=$(find . -maxdepth 1 -type f -executable ! -name "*.so*" ! -name "*.hdll" | head -1)
           export LD_LIBRARY_PATH="$(pwd):$LD_LIBRARY_PATH"
-          timeout 30 ./run.sh > /tmp/game-linux-hl.log 2>&1 || true
+          timeout 30 "$EXE" > /tmp/game-linux-hl.log 2>&1 || true
           cd -
 
           echo "=== Game log ==="
@@ -489,10 +490,7 @@ jobs:
           yes | haxelib run lime setup || true
 
       - name: Build HashLink target
-        run: |
-          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
-          "$HAXEFMOD_DIR/scripts/build-hl-mac.sh" .
+        run: haxelib run lime build hl
 
       - name: Validate build output
         run: |
@@ -718,58 +716,8 @@ jobs:
           Get-ChildItem "C:\hashlink" | Format-Table Name, Length
           try { & "C:\hashlink\hl.exe" --version 2>&1 } catch { Write-Host "hl --version not supported" }
 
-      - name: Resolve haxefmod path
-        run: |
-          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR"
-          # Convert to Windows path for cmd step
-          HAXEFMOD_DIR_WIN=$(cygpath -w "$HAXEFMOD_DIR")
-          echo "HAXEFMOD_DIR=$HAXEFMOD_DIR" >> "$GITHUB_ENV"
-          echo "HAXEFMOD_DIR_WIN=$HAXEFMOD_DIR_WIN" >> "$GITHUB_ENV"
-
-      - name: Compile hlaxe_fmod.hdll
-        shell: cmd
-        run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cd /d "%HAXEFMOD_DIR_WIN%\native\hlaxe"
-          cl /LD /O2 /DWIN32 hlaxe_fmod.c ^
-            /I"C:\hashlink\include" ^
-            /I"%HAXEFMOD_DIR_WIN%\lib\Windows\api\core\inc" ^
-            /I"%HAXEFMOD_DIR_WIN%\lib\Windows\api\studio\inc" ^
-            /link ^
-            /LIBPATH:"%HAXEFMOD_DIR_WIN%\lib\Windows\api\core\lib\x64" ^
-            /LIBPATH:"%HAXEFMOD_DIR_WIN%\lib\Windows\api\studio\lib\x64" ^
-            fmod_vc.lib fmodstudio_vc.lib ^
-            /LIBPATH:"C:\hashlink" libhl.lib ^
-            /OUT:hlaxe_fmod.hdll
-          if %ERRORLEVEL% NEQ 0 (
-            echo "MSVC compilation failed"
-            exit /b 1
-          )
-          echo "hlaxe_fmod.hdll compiled successfully"
-          dir hlaxe_fmod.hdll
-
       - name: Build HashLink target
-        run: |
-          haxelib run lime build hl
-
-      - name: Copy dependencies to output
-        run: |
-          HAXEFMOD_DIR=$(haxelib path haxefmod | head -1)
-          BIN_DIR="export/hl/bin"
-          if [ ! -d "$BIN_DIR" ]; then
-            echo "ERROR: No HL bin directory found"
-            find export -type d
-            exit 1
-          fi
-          echo "Copying FMOD DLLs and hlaxe_fmod.hdll to $BIN_DIR"
-
-          cp "$HAXEFMOD_DIR/lib/Windows/api/core/lib/x64/fmod.dll" "$BIN_DIR/"
-          cp "$HAXEFMOD_DIR/lib/Windows/api/studio/lib/x64/fmodstudio.dll" "$BIN_DIR/"
-          cp "$HAXEFMOD_DIR/native/hlaxe/hlaxe_fmod.hdll" "$BIN_DIR/"
-
-          echo "Bin dir contents:"
-          ls -la "$BIN_DIR"
+        run: haxelib run lime build hl
 
       - name: Validate build output
         run: |
