@@ -29,7 +29,10 @@ haxelib install openfl 9.5.0 --always --quiet
 haxelib install flixel 6.1.2 --always --quiet
 haxelib install hxcpp 4.3.2 --always --quiet
 
-# Install haxefmod from git branch
+# Remove any existing haxefmod installation (git, dev, or haxelib)
+haxelib remove haxefmod 2>/dev/null || true
+
+# Install haxefmod fresh from git branch
 echo "Installing haxefmod from $HAXEFMOD_REPO @ $HAXEFMOD_BRANCH"
 haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
 
