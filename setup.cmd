@@ -8,7 +8,7 @@ REM For local development with a local haxe-fmod checkout, use:
 REM   haxelib dev haxefmod /path/to/haxe-fmod
 REM instead of running this script.
 
-if not defined HAXEFMOD_BRANCH set HAXEFMOD_BRANCH=hashlink-refactor
+if not defined HAXEFMOD_BRANCH set HAXEFMOD_BRANCH=hashlink-refactor-standardize
 if not defined HAXEFMOD_REPO set HAXEFMOD_REPO=https://github.com/Tanz0rz/haxe-fmod.git
 
 echo === haxe-fmod-test setup ===
