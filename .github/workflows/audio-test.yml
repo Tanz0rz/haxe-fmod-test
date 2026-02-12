@@ -41,11 +41,15 @@ jobs:
           GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
           mkdir -p "$FMOD_SDK"
+          echo "Downloading FMOD SDK for Linux..."
           gh release download 2.03.12 \
             --repo Tanz0rz/fmod-sdk-cache \
             --pattern "fmod-sdk-linux-2.03.12.tar.gz" \
-            --dir /tmp
-          tar -xzf /tmp/fmod-sdk-linux-2.03.12.tar.gz -C "$FMOD_SDK"
+            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
+          echo "Extracting SDK..."
+          tar -xzf /tmp/fmod-sdk-linux-2.03.12.tar.gz -C "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
+          echo "SDK ready"
+          ls -la "$FMOD_SDK/api/core/inc/" | head -3
 
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
@@ -188,11 +192,15 @@ jobs:
           GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
           mkdir -p "$FMOD_SDK"
+          echo "Downloading FMOD SDK for Linux..."
           gh release download 2.03.12 \
             --repo Tanz0rz/fmod-sdk-cache \
             --pattern "fmod-sdk-linux-2.03.12.tar.gz" \
-            --dir /tmp
-          tar -xzf /tmp/fmod-sdk-linux-2.03.12.tar.gz -C "$FMOD_SDK"
+            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
+          echo "Extracting SDK..."
+          tar -xzf /tmp/fmod-sdk-linux-2.03.12.tar.gz -C "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
+          echo "SDK ready"
+          ls -la "$FMOD_SDK/api/core/inc/" | head -3
 
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
@@ -355,11 +363,15 @@ jobs:
           GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
           mkdir -p "$FMOD_SDK"
+          echo "Downloading FMOD SDK for HTML5..."
           gh release download 2.03.12 \
             --repo Tanz0rz/fmod-sdk-cache \
             --pattern "fmod-sdk-html5-2.03.12.zip" \
-            --dir /tmp
-          unzip -q /tmp/fmod-sdk-html5-2.03.12.zip -d "$FMOD_SDK"
+            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
+          echo "Extracting SDK..."
+          unzip -q /tmp/fmod-sdk-html5-2.03.12.zip -d "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
+          echo "SDK ready"
+          ls -la "$FMOD_SDK/api/studio/lib/wasm/" | head -3
 
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
@@ -491,11 +503,14 @@ jobs:
           GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
           mkdir -p "$FMOD_SDK"
+          echo "Downloading FMOD SDK for Mac..."
           gh release download 2.03.12 \
             --repo Tanz0rz/fmod-sdk-cache \
             --pattern "fmod-sdk-mac-2.03.12.tar.gz" \
-            --dir /tmp
-          tar -xzf /tmp/fmod-sdk-mac-2.03.12.tar.gz -C "$FMOD_SDK"
+            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
+          echo "Extracting SDK..."
+          tar -xzf /tmp/fmod-sdk-mac-2.03.12.tar.gz -C "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
+          echo "SDK ready"
 
       - name: Setup Haxe via Homebrew
         run: |
@@ -603,11 +618,14 @@ jobs:
           GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
           mkdir -p "$FMOD_SDK"
+          echo "Downloading FMOD SDK for Mac..."
           gh release download 2.03.12 \
             --repo Tanz0rz/fmod-sdk-cache \
             --pattern "fmod-sdk-mac-2.03.12.tar.gz" \
-            --dir /tmp
-          tar -xzf /tmp/fmod-sdk-mac-2.03.12.tar.gz -C "$FMOD_SDK"
+            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
+          echo "Extracting SDK..."
+          tar -xzf /tmp/fmod-sdk-mac-2.03.12.tar.gz -C "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
+          echo "SDK ready"
           echo ">>> FMOD SDK contents:"
           ls -R "$FMOD_SDK/api/" | head -20
 
@@ -718,11 +736,14 @@ jobs:
           GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
           mkdir -p "$FMOD_SDK"
+          echo "Downloading FMOD SDK for Windows..."
           gh release download 2.03.12 \
             --repo Tanz0rz/fmod-sdk-cache \
             --pattern "fmod-sdk-windows-2.03.12.zip" \
-            --dir /tmp
-          unzip -q /tmp/fmod-sdk-windows-2.03.12.zip -d "$FMOD_SDK"
+            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
+          echo "Extracting SDK..."
+          unzip -q /tmp/fmod-sdk-windows-2.03.12.zip -d "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
+          echo "SDK ready"
 
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
@@ -864,11 +885,14 @@ jobs:
           GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
           mkdir -p "$FMOD_SDK"
+          echo "Downloading FMOD SDK for Windows..."
           gh release download 2.03.12 \
             --repo Tanz0rz/fmod-sdk-cache \
             --pattern "fmod-sdk-windows-2.03.12.zip" \
-            --dir /tmp
-          unzip -q /tmp/fmod-sdk-windows-2.03.12.zip -d "$FMOD_SDK"
+            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
+          echo "Extracting SDK..."
+          unzip -q /tmp/fmod-sdk-windows-2.03.12.zip -d "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
+          echo "SDK ready"
 
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
