@@ -4,3 +4,4 @@ export/
 ci/artifacts/
 .DS_Store
 fmod-sdk/
+.haxelib/

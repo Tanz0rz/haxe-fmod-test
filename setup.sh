@@ -10,7 +10,7 @@
 
 set -e
 
-HAXEFMOD_BRANCH="${HAXEFMOD_BRANCH:-hashlink-refactor}"
+HAXEFMOD_BRANCH="${HAXEFMOD_BRANCH:-haxelib-refactor-haxe}"
 HAXEFMOD_REPO="${HAXEFMOD_REPO:-https://github.com/Tanz0rz/haxe-fmod.git}"
 
 echo "=== haxe-fmod-test setup ==="
