@@ -36,8 +36,10 @@ haxelib remove haxefmod 2>/dev/null || true
 echo "Installing haxefmod from $HAXEFMOD_REPO @ $HAXEFMOD_BRANCH"
 haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
 
-# Setup lime
-yes | haxelib run lime setup || true
+# Setup lime (may prompt for sudo to install system-wide 'lime' command)
+echo ""
+echo "Setting up lime (may require sudo)..."
+haxelib run lime setup || true
 
 echo ""
 echo "=== Setup complete ==="
