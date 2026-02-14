@@ -18,7 +18,10 @@ echo "  haxefmod branch: $HAXEFMOD_BRANCH"
 echo ""
 
 # Create local haxelib repo so all dependencies stay in this project
-haxelib newrepo
+# (skipped in CI — CI configures haxelib separately for caching)
+if [ -z "$CI" ]; then
+  haxelib newrepo
+fi
 
 # Install dependencies
 haxelib install lime 8.3.0 --always --quiet
@@ -36,7 +39,11 @@ haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
 # Setup lime (may prompt for sudo to install system-wide 'lime' command)
 echo ""
 echo "Setting up lime (may require sudo)..."
-haxelib run lime setup || true
+if [ -n "$CI" ]; then
+  yes | haxelib run lime setup || true
+else
+  haxelib run lime setup || true
+fi
 
 echo ""
 echo "=== Setup complete ==="

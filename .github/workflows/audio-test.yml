@@ -64,20 +64,8 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up haxelib..."
           haxelib setup ~/haxelib
-          echo ">>> Installing lime 8.3.0..."
-          haxelib install lime 8.3.0 --always --quiet
-          echo ">>> Installing openfl 9.5.0..."
-          haxelib install openfl 9.5.0 --always --quiet
-          echo ">>> Installing flixel 6.1.2..."
-          haxelib install flixel 6.1.2 --always --quiet
-          echo ">>> Installing hxcpp 4.3.2..."
-          haxelib install hxcpp 4.3.2 --always --quiet
-          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
-          echo ">>> Running lime setup..."
-          yes | haxelib run lime setup || true
+          ./setup.sh
 
       - name: Install system dependencies
         run: |
@@ -221,18 +209,8 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up haxelib..."
           haxelib setup ~/haxelib
-          echo ">>> Installing lime 8.3.0..."
-          haxelib install lime 8.3.0 --always --quiet
-          echo ">>> Installing openfl 9.5.0..."
-          haxelib install openfl 9.5.0 --always --quiet
-          echo ">>> Installing flixel 6.1.2..."
-          haxelib install flixel 6.1.2 --always --quiet
-          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
-          echo ">>> Running lime setup..."
-          yes | haxelib run lime setup || true
+          ./setup.sh
 
       - name: Install system dependencies
         run: |
@@ -398,18 +376,8 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up haxelib..."
           haxelib setup ~/haxelib
-          echo ">>> Installing lime 8.3.0..."
-          haxelib install lime 8.3.0 --always --quiet
-          echo ">>> Installing openfl 9.5.0..."
-          haxelib install openfl 9.5.0 --always --quiet
-          echo ">>> Installing flixel 6.1.2..."
-          haxelib install flixel 6.1.2 --always --quiet
-          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
-          echo ">>> Running lime setup..."
-          yes | haxelib run lime setup || true
+          ./setup.sh
 
       - name: Install system dependencies
         run: |
@@ -540,21 +508,9 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up haxelib..."
           mkdir -p ~/haxelib
           haxelib setup ~/haxelib
-          echo ">>> Installing lime 8.3.0..."
-          haxelib install lime 8.3.0 --always --quiet
-          echo ">>> Installing openfl 9.5.0..."
-          haxelib install openfl 9.5.0 --always --quiet
-          echo ">>> Installing flixel 6.1.2..."
-          haxelib install flixel 6.1.2 --always --quiet
-          echo ">>> Installing hxcpp 4.3.2..."
-          haxelib install hxcpp 4.3.2 --always --quiet
-          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
-          echo ">>> Running lime setup..."
-          yes | haxelib run lime setup || true
+          ./setup.sh
 
       - name: Build C++ target
         run: |
@@ -663,19 +619,9 @@ jobs:
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up haxelib..."
           mkdir -p ~/haxelib
           haxelib setup ~/haxelib
-          echo ">>> Installing lime 8.3.0..."
-          haxelib install lime 8.3.0 --always --quiet
-          echo ">>> Installing openfl 9.5.0..."
-          haxelib install openfl 9.5.0 --always --quiet
-          echo ">>> Installing flixel 6.1.2..."
-          haxelib install flixel 6.1.2 --always --quiet
-          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
-          echo ">>> Running lime setup..."
-          yes | haxelib run lime setup || true
+          ./setup.sh
 
       - name: Build HashLink target
         run: |
@@ -792,21 +738,10 @@ jobs:
           key: haxelib-cpp-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
 
       - name: Install Haxe libraries
+        shell: cmd
         run: |
-          echo ">>> Setting up haxelib..."
-          haxelib setup ~/haxelib
-          echo ">>> Installing lime 8.3.0..."
-          haxelib install lime 8.3.0 --always --quiet
-          echo ">>> Installing openfl 9.5.0..."
-          haxelib install openfl 9.5.0 --always --quiet
-          echo ">>> Installing flixel 6.1.2..."
-          haxelib install flixel 6.1.2 --always --quiet
-          echo ">>> Installing hxcpp 4.3.2..."
-          haxelib install hxcpp 4.3.2 --always --quiet
-          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
-          echo ">>> Running lime setup..."
-          yes | haxelib run lime setup || true
+          haxelib setup %USERPROFILE%\haxelib
+          call setup.cmd
 
       - name: Build C++ target
         run: |
@@ -948,19 +883,10 @@ jobs:
           key: haxelib-hl-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
 
       - name: Install Haxe libraries
+        shell: cmd
         run: |
-          echo ">>> Setting up haxelib..."
-          haxelib setup ~/haxelib
-          echo ">>> Installing lime 8.3.0..."
-          haxelib install lime 8.3.0 --always --quiet
-          echo ">>> Installing openfl 9.5.0..."
-          haxelib install openfl 9.5.0 --always --quiet
-          echo ">>> Installing flixel 6.1.2..."
-          haxelib install flixel 6.1.2 --always --quiet
-          echo ">>> Installing haxefmod from git ($HAXEFMOD_BRANCH)..."
-          haxelib git haxefmod "$HAXEFMOD_REPO" "$HAXEFMOD_BRANCH" --always
-          echo ">>> Running lime setup..."
-          yes | haxelib run lime setup || true
+          haxelib setup %USERPROFILE%\haxelib
+          call setup.cmd
 
       - name: Build and install HashLink
         shell: powershell

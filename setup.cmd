@@ -16,7 +16,8 @@ echo   haxefmod branch: %HAXEFMOD_BRANCH%
 echo.
 
 REM Create local haxelib repo so all dependencies stay in this project
-haxelib newrepo
+REM (skipped in CI -- CI configures haxelib separately for caching)
+if not defined CI haxelib newrepo
 
 REM Install dependencies
 haxelib install lime 8.3.0 --always --quiet
@@ -34,7 +35,7 @@ haxelib git haxefmod "%HAXEFMOD_REPO%" "%HAXEFMOD_BRANCH%" --always
 REM Setup lime
 echo.
 echo Setting up lime...
-haxelib run lime setup
+if defined CI (echo y | haxelib run lime setup) else (haxelib run lime setup)
 
 echo.
 echo === Setup complete ===
