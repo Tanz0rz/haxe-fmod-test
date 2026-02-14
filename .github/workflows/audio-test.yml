@@ -59,13 +59,13 @@ jobs:
       - name: Cache haxelib
         uses: actions/cache@v4
         with:
-          path: .haxelib
+          path: ~/haxelib
           key: haxelib-cpp-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up local haxelib repo..."
-          haxelib newrepo
+          echo ">>> Setting up haxelib..."
+          haxelib setup ~/haxelib
           echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
           echo ">>> Installing openfl 9.5.0..."
@@ -216,13 +216,13 @@ jobs:
       - name: Cache haxelib
         uses: actions/cache@v4
         with:
-          path: .haxelib
+          path: ~/haxelib
           key: haxelib-hl-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up local haxelib repo..."
-          haxelib newrepo
+          echo ">>> Setting up haxelib..."
+          haxelib setup ~/haxelib
           echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
           echo ">>> Installing openfl 9.5.0..."
@@ -393,13 +393,13 @@ jobs:
       - name: Cache haxelib
         uses: actions/cache@v4
         with:
-          path: .haxelib
+          path: ~/haxelib
           key: haxelib-html5-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up local haxelib repo..."
-          haxelib newrepo
+          echo ">>> Setting up haxelib..."
+          haxelib setup ~/haxelib
           echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
           echo ">>> Installing openfl 9.5.0..."
@@ -535,13 +535,14 @@ jobs:
       - name: Cache haxelib
         uses: actions/cache@v4
         with:
-          path: .haxelib
+          path: ~/haxelib
           key: haxelib-cpp-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up local haxelib repo..."
-          haxelib newrepo
+          echo ">>> Setting up haxelib..."
+          mkdir -p ~/haxelib
+          haxelib setup ~/haxelib
           echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
           echo ">>> Installing openfl 9.5.0..."
@@ -657,13 +658,14 @@ jobs:
       - name: Cache haxelib
         uses: actions/cache@v4
         with:
-          path: .haxelib
+          path: ~/haxelib
           key: haxelib-hl-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up local haxelib repo..."
-          haxelib newrepo
+          echo ">>> Setting up haxelib..."
+          mkdir -p ~/haxelib
+          haxelib setup ~/haxelib
           echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
           echo ">>> Installing openfl 9.5.0..."
@@ -786,13 +788,13 @@ jobs:
       - name: Cache haxelib
         uses: actions/cache@v4
         with:
-          path: .haxelib
+          path: ~/haxelib
           key: haxelib-cpp-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up local haxelib repo..."
-          haxelib newrepo
+          echo ">>> Setting up haxelib..."
+          haxelib setup ~/haxelib
           echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
           echo ">>> Installing openfl 9.5.0..."
@@ -942,13 +944,13 @@ jobs:
       - name: Cache haxelib
         uses: actions/cache@v4
         with:
-          path: .haxelib
+          path: ~/haxelib
           key: haxelib-hl-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ env.HAXEFMOD_BRANCH }}
 
       - name: Install Haxe libraries
         run: |
-          echo ">>> Setting up local haxelib repo..."
-          haxelib newrepo
+          echo ">>> Setting up haxelib..."
+          haxelib setup ~/haxelib
           echo ">>> Installing lime 8.3.0..."
           haxelib install lime 8.3.0 --always --quiet
           echo ">>> Installing openfl 9.5.0..."
