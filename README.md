@@ -4,7 +4,6 @@ A minimal [HaxeFlixel](https://haxeflixel.com/) game demonstrating how to use [h
 
 ## Quick Start
 
-**Linux/macOS:**
 ```bash
 git clone https://github.com/Tanz0rz/haxe-fmod-test.git
 cd haxe-fmod-test
@@ -12,13 +11,7 @@ cd haxe-fmod-test
 lime test hl
 ```
 
-**Windows:**
-```cmd
-git clone https://github.com/Tanz0rz/haxe-fmod-test.git
-cd haxe-fmod-test
-setup.cmd
-lime test hl
-```
+**Note:** Requires bash (Linux/macOS, or Git Bash/WSL on Windows)
 
 ## What This Demonstrates
 
