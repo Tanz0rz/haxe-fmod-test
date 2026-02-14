@@ -6,7 +6,8 @@ Integration test project for haxe-fmod. Uses a HaxeFlixel game (EZPlatformer) to
 
 ```
 Project.xml          - Lime/OpenFL project config (app name: EZPlatformerTestEdition)
-setup.sh             - Installs haxelib dependencies + haxefmod from git
+setup.sh             - Installs haxelib dependencies + haxefmod from git (Linux/Mac)
+setup.cmd            - Windows CMD equivalent of setup.sh (no bash required)
 source/              - Game source code (HaxeFlixel)
 assets/              - Game assets including FMOD banks (assets/fmod/Desktop/)
 ci/                  - CI validation scripts
@@ -22,10 +23,17 @@ ci/                  - CI validation scripts
 
 ## How This Repo Relates to haxe-fmod
 
-This repo installs haxefmod via `haxelib git` from a configurable branch/repo. All builds use plain `lime build <target>` commands — haxefmod's `include.xml` handles everything automatically via `<templatePath>` (HL), `<postbuild>` (C++ Mac/Linux), and `<dependency>` (C++ Windows).
-- `HAXEFMOD_BRANCH` env var in the CI workflow controls which haxe-fmod branch to use
-- `setup.sh` defaults to `hashlink-refactor` branch (overridable via env var)
+This repo installs haxefmod via `haxelib git` from a configurable branch/repo. All builds use plain `lime build <target>` commands — haxefmod's `include.xml` handles everything automatically via `<templatePath>` (HL), `<postbuild>` (all targets via PostBuild.hx), and `<dependency>` (HTML5 placeholders).
+- `HAXEFMOD_BRANCH` env var controls which haxe-fmod branch to use
+- `setup.sh` / `setup.cmd` default to `haxelib-refactor-haxe` branch (overridable via env var)
+- Both setup scripts detect `CI` env var to skip `haxelib newrepo` (CI configures haxelib separately for caching)
 - **IMPORTANT**: Use `haxelib git ... --always` to ensure cached repos are updated in CI
+
+### Setup Scripts
+- **`setup.sh`** (Linux/Mac): Bash script, uses `$HAXEFMOD_BRANCH` / `$HAXEFMOD_REPO` env vars
+- **`setup.cmd`** (Windows): CMD script, uses `%HAXEFMOD_BRANCH%` / `%HAXEFMOD_REPO%` env vars
+- Both install: lime 8.3.0, openfl 9.5.0, flixel 6.1.2, hxcpp 4.3.2, then haxefmod from git
+- In CI: skips `haxelib newrepo`, pipes `yes` to `lime setup` to auto-accept prompts
 
 ## Supported Platforms
 
@@ -45,9 +53,13 @@ Build commands work on any Linux distro (developed on CachyOS/Arch), macOS, and 
 | windows-cpp | windows-latest | `lime build windows -64` | FMOD_WAVWRITER env var |
 | windows-hl | windows-latest | `lime build hl` | FMOD_WAVWRITER env var |
 
-All jobs use plain `lime build` commands. No build scripts needed — haxefmod's include.xml handles FMOD lib copying automatically.
+All jobs use plain `lime build` commands. No build scripts needed — haxefmod's include.xml handles FMOD lib copying automatically via PostBuild.hx.
 
 CI has `paths-ignore` for `*.md` and `.gitignore` — doc-only pushes skip builds.
+
+**CI setup**: All jobs use setup scripts instead of inline haxelib commands:
+- Linux/Mac jobs: `haxelib setup ~/haxelib` + `./setup.sh` (Mac also needs `mkdir -p ~/haxelib`)
+- Windows jobs: `shell: cmd` + `haxelib setup %USERPROFILE%\haxelib` + `call setup.cmd`
 
 ### CI Validation Scripts
 
@@ -65,6 +77,8 @@ CI has `paths-ignore` for `*.md` and `.gitignore` — doc-only pushes skip build
 - **macOS haxelib** — Must `mkdir -p ~/haxelib` before `haxelib setup ~/haxelib`
 - **Windows FMOD WAVWRITER** — Writes 0 channels in WAV header on Sys.exit(); Python step patches bytes 22-23, 28-31, 32-33
 - **`haxelib git --always`** — Without `--always`, haxelib prompts "Reset changes?" defaulting to 'n' in CI, preventing repo updates
+- **Windows CI shell** — Windows jobs default to `shell: bash` (Git Bash). Use `shell: cmd` for setup.cmd, `call setup.cmd` to avoid exiting the parent shell
+- **`haxelib newrepo` in CI** — Skip in CI (both scripts check `CI` env var) because CI configures haxelib separately for caching
 
 ## Commit Rules
 
