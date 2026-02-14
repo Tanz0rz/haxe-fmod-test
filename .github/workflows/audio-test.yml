@@ -31,7 +31,7 @@ jobs:
   # ===========================================================================
   linux-cpp:
     runs-on: ubuntu-latest
-    if: false  # Disabled - will re-enable later
+    #if: false  # Disabled - will re-enable later
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -419,6 +419,8 @@ jobs:
           sudo apt-get install -y pulseaudio libasound2-plugins xvfb ffmpeg chromium-browser xdotool
 
       - name: Build HTML5 target
+        env:
+          FMOD_SDK_WEB: ${{ env.FMOD_SDK }}
         run: |
           echo ">>> Building HTML5 target..."
           haxelib run lime build html5
@@ -505,7 +507,7 @@ jobs:
   # ===========================================================================
   mac-cpp:
     runs-on: macos-14
-    if: false  # Disabled - will re-enable later
+    #if: false  # Disabled - will re-enable later
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -741,7 +743,7 @@ jobs:
   # ===========================================================================
   windows-cpp:
     runs-on: windows-latest
-    if: false  # Disabled - will re-enable later
+    #if: false  # Disabled - will re-enable later
     timeout-minutes: 30
     defaults:
       run:
