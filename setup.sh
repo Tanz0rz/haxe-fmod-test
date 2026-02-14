@@ -17,11 +17,8 @@ echo "=== haxe-fmod-test setup ==="
 echo "  haxefmod branch: $HAXEFMOD_BRANCH"
 echo ""
 
-# Ensure haxelib is configured
-if [ ! -d ~/haxelib ]; then
-  mkdir -p ~/haxelib
-  haxelib setup ~/haxelib
-fi
+# Create local haxelib repo so all dependencies stay in this project
+haxelib newrepo
 
 # Install dependencies
 haxelib install lime 8.3.0 --always --quiet
