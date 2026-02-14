@@ -24,14 +24,13 @@ ci/                  - CI validation scripts
 ## How This Repo Relates to haxe-fmod
 
 This repo installs haxefmod via `haxelib git` from a configurable branch/repo. All builds use plain `lime build <target>` commands — haxefmod's `include.xml` handles everything automatically via `<templatePath>` (HL), `<postbuild>` (all targets via PostBuild.hx), and `<dependency>` (HTML5 placeholders).
-- `HAXEFMOD_BRANCH` env var controls which haxe-fmod branch to use
-- `setup.sh` / `setup.cmd` default to `haxelib-refactor-haxe` branch (overridable via env var)
+- `setup.sh` / `setup.cmd` require the haxe-fmod branch as a command line argument
 - Both setup scripts detect `CI` env var to skip `haxelib newrepo` (CI configures haxelib separately for caching)
 - **IMPORTANT**: Use `haxelib git ... --always` to ensure cached repos are updated in CI
 
 ### Setup Scripts
-- **`setup.sh`** (Linux/Mac): Bash script, uses `$HAXEFMOD_BRANCH` / `$HAXEFMOD_REPO` env vars
-- **`setup.cmd`** (Windows): CMD script, uses `%HAXEFMOD_BRANCH%` / `%HAXEFMOD_REPO%` env vars
+- **`setup.sh`** (Linux/Mac): Bash script, usage: `./setup.sh <branch>`
+- **`setup.cmd`** (Windows): CMD script, usage: `setup.cmd <branch>`
 - Both install: lime 8.3.0, openfl 9.5.0, flixel 6.1.2, hxcpp 4.3.2, then haxefmod from git
 - In CI: skips `haxelib newrepo`, pipes `yes` to `lime setup` to auto-accept prompts
 
@@ -58,8 +57,8 @@ All jobs use plain `lime build` commands. No build scripts needed — haxefmod's
 CI has `paths-ignore` for `*.md` and `.gitignore` — doc-only pushes skip builds.
 
 **CI setup**: All jobs use setup scripts instead of inline haxelib commands:
-- Linux/Mac jobs: `haxelib setup ~/haxelib` + `./setup.sh` (Mac also needs `mkdir -p ~/haxelib`)
-- Windows jobs: `shell: cmd` + `haxelib setup %USERPROFILE%\haxelib` + `call setup.cmd`
+- Linux/Mac jobs: `haxelib setup ~/haxelib` + `./setup.sh <branch>` (Mac also needs `mkdir -p ~/haxelib`)
+- Windows jobs: `shell: cmd` + `haxelib setup %USERPROFILE%\haxelib` + `call setup.cmd <branch>`
 
 ### CI Validation Scripts
 

@@ -2,13 +2,19 @@
 REM Setup script for haxe-fmod-test
 REM Installs all required Haxe libraries including haxefmod from the target branch.
 REM
-REM Usage: setup.cmd
+REM Usage: setup.cmd <branch>
 REM
 REM For local development with a local haxe-fmod checkout, use:
 REM   haxelib dev haxefmod C:\path\to\haxe-fmod
 REM instead of running this script.
 
-if "%HAXEFMOD_BRANCH%"=="" set HAXEFMOD_BRANCH=haxelib-refactor-haxe
+if "%~1"=="" (
+    echo ERROR: Branch name required.
+    echo Usage: setup.cmd ^<branch^>
+    exit /b 1
+)
+
+set HAXEFMOD_BRANCH=%~1
 if "%HAXEFMOD_REPO%"=="" set HAXEFMOD_REPO=https://github.com/Tanz0rz/haxe-fmod.git
 
 echo === haxe-fmod-test setup ===

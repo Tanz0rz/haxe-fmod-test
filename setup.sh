@@ -2,7 +2,7 @@
 # Setup script for haxe-fmod-test
 # Installs all required Haxe libraries including haxefmod from the target branch.
 #
-# Usage: ./setup.sh
+# Usage: ./setup.sh <branch>
 #
 # For local development with a local haxe-fmod checkout, use:
 #   haxelib dev haxefmod /path/to/haxe-fmod
@@ -10,7 +10,13 @@
 
 set -e
 
-HAXEFMOD_BRANCH="${HAXEFMOD_BRANCH:-haxelib-refactor-haxe}"
+if [ -z "$1" ]; then
+  echo "ERROR: Branch name required."
+  echo "Usage: ./setup.sh <branch>"
+  exit 1
+fi
+
+HAXEFMOD_BRANCH="$1"
 HAXEFMOD_REPO="${HAXEFMOD_REPO:-https://github.com/Tanz0rz/haxe-fmod.git}"
 
 echo "=== haxe-fmod-test setup ==="

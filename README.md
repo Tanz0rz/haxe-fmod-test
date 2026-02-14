@@ -7,7 +7,7 @@ A minimal [HaxeFlixel](https://haxeflixel.com/) game demonstrating how to use [h
 ```bash
 git clone https://github.com/Tanz0rz/haxe-fmod-test.git
 cd haxe-fmod-test
-./setup.sh
+./setup.sh master
 lime test hl
 ```
 
