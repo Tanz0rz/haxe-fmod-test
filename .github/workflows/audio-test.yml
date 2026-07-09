@@ -37,19 +37,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download FMOD SDK
-        env:
-          GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
+          git clone --depth 1 --branch 2.03.12 \
+            https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
+            /tmp/fmod-sdk-cache
           mkdir -p "$FMOD_SDK"
-          echo "Downloading FMOD SDK for Linux..."
-          gh release download 2.03.12 \
-            --repo Tanz0rz/fmod-sdk-cache \
-            --pattern "fmod-sdk-linux-2.03.12.tar.gz" \
-            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
-          echo "Extracting SDK..."
-          tar -xzf /tmp/fmod-sdk-linux-2.03.12.tar.gz -C "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
-          echo "SDK ready"
-          ls -la "$FMOD_SDK/api/core/inc/" | head -3
+          cp -R /tmp/fmod-sdk-cache/linux/* "$FMOD_SDK/"
+          ls -la "$FMOD_SDK/api/core/inc/" | head -5
 
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
@@ -176,24 +170,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download FMOD SDK
-        env:
-          GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
+          git clone --depth 1 --branch 2.03.12 \
+            https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
+            /tmp/fmod-sdk-cache
           mkdir -p "$FMOD_SDK"
-
-          # Get asset ID dynamically from release tag
-          ASSET_ID=$(gh api repos/Tanz0rz/fmod-sdk-cache/releases/tags/2.03.12 \
-            --jq '.assets[] | select(.name == "fmod-sdk-linux-2.03.12.tar.gz") | .id')
-
-          echo "Downloading fmod-sdk-linux-2.03.12.tar.gz (asset ID: $ASSET_ID)"
-
-          curl -L \
-            -H "Authorization: token ${{ secrets.FMOD_SDK_TOKEN }}" \
-            -H "Accept: application/octet-stream" \
-            -o /tmp/fmod-sdk-linux-2.03.12.tar.gz \
-            "https://api.github.com/repos/Tanz0rz/fmod-sdk-cache/releases/assets/$ASSET_ID"
-
-          tar -xzf /tmp/fmod-sdk-linux-2.03.12.tar.gz -C "$FMOD_SDK"
+          cp -R /tmp/fmod-sdk-cache/linux/* "$FMOD_SDK/"
           ls -la "$FMOD_SDK/api/core/inc/" | head -5
 
       - name: Setup Haxe
@@ -343,24 +325,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download FMOD SDK
-        env:
-          GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
+          git clone --depth 1 --branch 2.03.12 \
+            https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
+            /tmp/fmod-sdk-cache
           mkdir -p "$FMOD_SDK"
-
-          # Get asset ID dynamically from release tag
-          ASSET_ID=$(gh api repos/Tanz0rz/fmod-sdk-cache/releases/tags/2.03.12 \
-            --jq '.assets[] | select(.name == "fmod-sdk-html5-2.03.12.zip") | .id')
-
-          echo "Downloading fmod-sdk-html5-2.03.12.zip (asset ID: $ASSET_ID)"
-
-          curl -L \
-            -H "Authorization: token ${{ secrets.FMOD_SDK_TOKEN }}" \
-            -H "Accept: application/octet-stream" \
-            -o /tmp/fmod-sdk-html5-2.03.12.zip \
-            "https://api.github.com/repos/Tanz0rz/fmod-sdk-cache/releases/assets/$ASSET_ID"
-
-          unzip -q /tmp/fmod-sdk-html5-2.03.12.zip -d "$FMOD_SDK"
+          cp -R /tmp/fmod-sdk-cache/html5/* "$FMOD_SDK/"
           ls -la "$FMOD_SDK/api/studio/lib/wasm/" | head -5
 
       - name: Setup Haxe
@@ -481,18 +451,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download FMOD SDK
-        env:
-          GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
+          git clone --depth 1 --branch 2.03.12 \
+            https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
+            /tmp/fmod-sdk-cache
           mkdir -p "$FMOD_SDK"
-          echo "Downloading FMOD SDK for Mac..."
-          gh release download 2.03.12 \
-            --repo Tanz0rz/fmod-sdk-cache \
-            --pattern "fmod-sdk-mac-2.03.12.tar.gz" \
-            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
-          echo "Extracting SDK..."
-          tar -xzf /tmp/fmod-sdk-mac-2.03.12.tar.gz -C "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
-          echo "SDK ready"
+          cp -R /tmp/fmod-sdk-cache/mac/* "$FMOD_SDK/"
+          ls -la "$FMOD_SDK/api/core/inc/" | head -5
 
       - name: Setup Haxe via Homebrew
         run: |
@@ -584,26 +549,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download FMOD SDK
-        env:
-          GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
+          git clone --depth 1 --branch 2.03.12 \
+            https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
+            /tmp/fmod-sdk-cache
           mkdir -p "$FMOD_SDK"
-
-          # Get asset ID dynamically from release tag
-          ASSET_ID=$(gh api repos/Tanz0rz/fmod-sdk-cache/releases/tags/2.03.12 \
-            --jq '.assets[] | select(.name == "fmod-sdk-mac-2.03.12.tar.gz") | .id')
-
-          echo "Downloading fmod-sdk-mac-2.03.12.tar.gz (asset ID: $ASSET_ID)"
-
-          curl -L \
-            -H "Authorization: token ${{ secrets.FMOD_SDK_TOKEN }}" \
-            -H "Accept: application/octet-stream" \
-            -o /tmp/fmod-sdk-mac-2.03.12.tar.gz \
-            "https://api.github.com/repos/Tanz0rz/fmod-sdk-cache/releases/assets/$ASSET_ID"
-
-          tar -xzf /tmp/fmod-sdk-mac-2.03.12.tar.gz -C "$FMOD_SDK"
-          echo "FMOD SDK contents:"
-          ls -R "$FMOD_SDK/api/" | head -20
+          cp -R /tmp/fmod-sdk-cache/mac/* "$FMOD_SDK/"
+          ls -la "$FMOD_SDK/api/core/inc/" | head -5
 
       - name: Setup Haxe via Homebrew
         run: |
@@ -698,18 +650,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download FMOD SDK
-        env:
-          GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
+          git clone --depth 1 --branch 2.03.12 \
+            https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
+            /tmp/fmod-sdk-cache
           mkdir -p "$FMOD_SDK"
-          echo "Downloading FMOD SDK for Windows..."
-          gh release download 2.03.12 \
-            --repo Tanz0rz/fmod-sdk-cache \
-            --pattern "fmod-sdk-windows-2.03.12.zip" \
-            --dir /tmp || { echo "ERROR: SDK download failed"; exit 1; }
-          echo "Extracting SDK..."
-          unzip -q /tmp/fmod-sdk-windows-2.03.12.zip -d "$FMOD_SDK" || { echo "ERROR: SDK extraction failed"; exit 1; }
-          echo "SDK ready"
+          cp -R /tmp/fmod-sdk-cache/windows/* "$FMOD_SDK/"
+          ls -la "$FMOD_SDK/api/core/inc/" | head -5
 
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
@@ -836,24 +783,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download FMOD SDK
-        env:
-          GH_TOKEN: ${{ secrets.FMOD_SDK_TOKEN }}
         run: |
+          git clone --depth 1 --branch 2.03.12 \
+            https://x-access-token:${{ secrets.FMOD_SDK_TOKEN }}@github.com/Tanz0rz/fmod-sdk-cache.git \
+            /tmp/fmod-sdk-cache
           mkdir -p "$FMOD_SDK"
-
-          # Get asset ID dynamically from release tag
-          ASSET_ID=$(gh api repos/Tanz0rz/fmod-sdk-cache/releases/tags/2.03.12 \
-            --jq '.assets[] | select(.name == "fmod-sdk-windows-2.03.12.zip") | .id')
-
-          echo "Downloading fmod-sdk-windows-2.03.12.zip (asset ID: $ASSET_ID)"
-
-          curl -L \
-            -H "Authorization: token ${{ secrets.FMOD_SDK_TOKEN }}" \
-            -H "Accept: application/octet-stream" \
-            -o /tmp/fmod-sdk-windows-2.03.12.zip \
-            "https://api.github.com/repos/Tanz0rz/fmod-sdk-cache/releases/assets/$ASSET_ID"
-
-          unzip -q /tmp/fmod-sdk-windows-2.03.12.zip -d "$FMOD_SDK"
+          cp -R /tmp/fmod-sdk-cache/windows/* "$FMOD_SDK/"
           ls -la "$FMOD_SDK/api/core/inc/" | head -5
 
       - name: Setup Haxe
